@@ -1,0 +1,16 @@
+name = "aura-backend"
+main = "src/index.ts"
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Audio files are stored in Supabase Storage (same project as your Postgres
+# database), NOT Cloudflare R2 — R2 requires a card on file even for its
+# free tier, Supabase Storage's free tier (1GB) doesn't. No binding needed
+# here since the Worker talks to Supabase Storage over its REST API using
+# the same SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY secrets already used
+# for the database — see .dev.vars.example.
+
+# Non-secret config. Secrets (API keys) are NOT put here — see .dev.vars.example
+# for local dev and use `wrangler secret put <NAME>` for production.
+[vars]
+ENVIRONMENT = "development"
