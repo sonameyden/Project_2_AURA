@@ -1,0 +1,7 @@
+# Standalone Android project
+/AURA/
+
+# Reference documents kept in the repository root
+/*.pdf
+/*.doc
+/*.docx
