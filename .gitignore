@@ -5,3 +5,11 @@
 /*.pdf
 /*.doc
 /*.docx
+
+# AI coding-assistant files (kept locally, not in the repository)
+.claude/
+.agents/
+AGENTS.md
+CLAUDE.md
+skills.md
+skills-lock.json

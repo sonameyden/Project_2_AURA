@@ -56,7 +56,6 @@ npx expo export --platform web
 
 ## References
 
-- [AURA React Native development guidance](./skills.md)
 - [React Native documentation](https://reactnative.dev/docs/getting-started)
 - [Expo Router](https://docs.expo.dev/router/introduction/)
 - [Expo Audio](https://docs.expo.dev/versions/latest/sdk/audio/)
