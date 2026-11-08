@@ -17,20 +17,44 @@ import type {
  */
 
 export const ENVIRONMENTS: readonly EnvironmentType[] = [
-  "Heaven", "Nature", "Ocean", "Dream", "Romantic", "Melancholic", "Hopeful", "Energetic",
+  "Heaven",
+  "Nature",
+  "Ocean",
+  "Dream",
+  "Romantic",
+  "Melancholic",
+  "Hopeful",
+  "Energetic",
 ];
 export const LIGHTING: readonly LightingStyle[] = ["Soft", "Bright", "Dramatic", "Fading"];
 const PARTICLES: readonly ParticleStyle[] = ["Dust", "Rain", "Bubbles", "Petals", "Stars", "Sparks", "None"];
 const KALEIDOSCOPES: readonly KaleidoscopeStyle[] = [
-  "SoftOrganic", "FluidSymmetry", "WaveLike", "SharpGeometric", "DarkReflective", "Floral",
+  "SoftOrganic",
+  "FluidSymmetry",
+  "WaveLike",
+  "SharpGeometric",
+  "DarkReflective",
+  "Floral",
 ];
 export const CAT_STATES: readonly CatBehaviorState[] = [
-  "Idle", "Sleeping", "Walking", "Stretching", "Playing", "Running", "Watching",
+  "Idle",
+  "Sleeping",
+  "Walking",
+  "Stretching",
+  "Playing",
+  "Running",
+  "Watching",
 ];
 export const SECTION_CAT_STATES: readonly SectionCatBehavior[] = [...CAT_STATES, "Dancing"];
 const TRANSITIONS: readonly TransitionStyle[] = ["Gentle", "Progressive", "Sharp"];
 export const SECTIONS: readonly SongSection[] = [
-  "Intro", "Verse", "PreChorus", "Chorus", "Bridge", "FinalChorus", "Outro",
+  "Intro",
+  "Verse",
+  "PreChorus",
+  "Chorus",
+  "Bridge",
+  "FinalChorus",
+  "Outro",
 ];
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -51,7 +75,10 @@ export function unitOr(value: unknown, fallback: number): number {
 export function sanitizeAtmosphereProfile(raw: any, songId: string): AtmosphereProfile {
   const primary = hexOr(raw?.primaryColorHex, "#7C6BD6");
   const secondaries = Array.isArray(raw?.secondaryColorHexes)
-    ? raw.secondaryColorHexes.map((hex: unknown) => hexOr(hex, "")).filter(Boolean).slice(0, 3)
+    ? raw.secondaryColorHexes
+        .map((hex: unknown) => hexOr(hex, ""))
+        .filter(Boolean)
+        .slice(0, 3)
     : [];
   return {
     songId,

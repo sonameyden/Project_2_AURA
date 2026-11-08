@@ -1,74 +1,40 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { useEffect, useState } from 'react';
 
 import {
-  BackButton,
   ActionButton,
-  AuraText,
+  BackButton,
   Card,
   ErrorMessage,
   Field,
   Heading,
   LoadingState,
   Page,
-  SectionTitle,
-  TrackRow,
   showAlert,
 } from '@/components/ui';
 import { auraApi } from '@/core/api';
 import { useAuth } from '@/core/auth-context';
-import { usePlayer } from '@/core/player';
-import { useAuraTheme } from '@/core/theme';
-import type { Album, Artist, Song } from '@/core/types';
+import { useRefreshCatalog } from '@/hooks/use-refresh-catalog';
 
+import { useMyArtist } from './hooks/use-my-artist';
+
+/**
+ * "Become an artist" setup. Artists are sent straight to their own artist page,
+ * which is where they manage their music, profile and account.
+ */
 export default function ArtistDashboardScreenFeature() {
   const router = useRouter();
   const { getToken } = useAuth();
-  const { colors } = useAuraTheme();
-  const { playSong } = usePlayer();
-  const [artist, setArtist] = useState<Artist | null>(null);
-  const [songs, setSongs] = useState<Song[]>([]);
-  const [albums, setAlbums] = useState<Album[]>([]);
+  const refreshCatalog = useRefreshCatalog();
+  const myArtist = useMyArtist();
   const [artistName, setArtistName] = useState('');
   const [bio, setBio] = useState('');
-  const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    try {
-      const token = await getToken();
-      const [profile, tracks, collections] = await Promise.all([
-        auraApi.getMyArtist(token),
-        auraApi.myArtistSongs(token),
-        auraApi.albums(token),
-      ]);
-      setArtist(profile);
-      setArtistName(profile.name);
-      setBio(profile.bio ?? '');
-      setSongs(tracks);
-      setAlbums(collections);
-      setError(null);
-    } catch (loadError) {
-      setArtist(null);
-      if (loadError instanceof Error && !('status' in loadError && loadError.status === 404)) {
-        setError(loadError.message);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [getToken]);
-
+  const artist = myArtist.data ?? null;
   useEffect(() => {
-    void Promise.resolve().then(load);
-  }, [load]);
-
-  useEffect(() => {
-    if (artist) {
-      router.replace({ pathname: '/artist/[id]', params: { id: artist.id } });
-    }
+    if (artist) router.replace({ pathname: '/artist/[id]', params: { id: 'me' } });
   }, [artist, router]);
 
   const becomeArtist = async () => {
@@ -77,104 +43,44 @@ export default function ArtistDashboardScreenFeature() {
       return;
     }
     setWorking(true);
+    setSaveError(null);
     try {
-      const token = await getToken();
-      await auraApi.createArtist(token, { name: artistName.trim(), bio: bio.trim() });
-      await load();
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Artist profile could not be created.');
+      await auraApi.createArtist(await getToken(), { name: artistName.trim(), bio: bio.trim() || null });
+      // Refetching "my artist" finds the new profile, which moves on to the artist page.
+      await refreshCatalog();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Artist profile could not be created.');
     } finally {
       setWorking(false);
     }
   };
 
-  const removeArtist = () =>
-    showAlert(
-      'Delete artist account?',
-      'This permanently removes your artist profile, albums and uploaded songs. Your listener account remains.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete artist account',
-          style: 'destructive',
-          onPress: () => {
-            setWorking(true);
-            void getToken()
-              .then((token) => auraApi.deleteArtist(token))
-              .then(() => {
-                setArtist(null);
-                setSongs([]);
-                setAlbums([]);
-              })
-              .catch((deleteError: unknown) =>
-                showAlert('Could not delete artist account', deleteError instanceof Error ? deleteError.message : 'Please try again.'),
-              )
-              .finally(() => setWorking(false));
-          },
-        },
-      ],
-    );
-
-  if (loading) {
+  if (myArtist.isPending || artist) {
     return (
       <Page style={{ justifyContent: 'center' }}>
-        <LoadingState label="Loading your creator dashboard…" />
+        <LoadingState label={artist ? 'Opening your artist page…' : 'Loading your creator dashboard…'} />
       </Page>
     );
   }
 
-  if (!artist) {
-    return (
-      <Page>
-        <BackButton />
-        <Heading title="Become an artist" subtitle="Share your music with the AURA community." />
-        {error ? <ErrorMessage message={error} onRetry={() => void load()} /> : null}
-        <Card>
-          <Field label="Artist name" value={artistName} onChangeText={setArtistName} placeholder="Your stage name" />
-          <Field label="Bio (optional)" value={bio} onChangeText={setBio} placeholder="Tell listeners about your sound" multiline />
-          <ActionButton title="Create artist profile" onPress={() => void becomeArtist()} loading={working} />
-        </Card>
-      </Page>
-    );
-  }
-
+  const loadError = myArtist.error instanceof Error ? myArtist.error.message : null;
   return (
     <Page>
       <BackButton />
-      <Heading title="Artist dashboard" subtitle={`Welcome, ${artist.name}.`} />
-      {error ? <ErrorMessage message={error} onRetry={() => void load()} /> : null}
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Card style={{ flex: 1 }}>
-          <AuraText style={{ color: colors.muted, fontSize: 12 }}>MONTHLY LISTENERS</AuraText>
-          <AuraText style={{ fontSize: 22, fontWeight: '800' }}>{artist.monthlyListeners.toLocaleString()}</AuraText>
-        </Card>
-        <Card style={{ flex: 1 }}>
-          <AuraText style={{ color: colors.muted, fontSize: 12 }}>ATMOSPHERE LIKES</AuraText>
-          <AuraText style={{ fontSize: 22, fontWeight: '800' }}>{artist.followerCount.toLocaleString()}</AuraText>
-        </Card>
-      </View>
-      <ActionButton title="Upload new experience" onPress={() => router.push('/upload')} icon={<Ionicons name="cloud-upload-outline" size={19} color="#FFFFFF" />} />
-      <ActionButton title="Create new album" variant="secondary" onPress={() => router.push('/album/create')} />
-      <View style={{ gap: 10 }}>
-        <SectionTitle title="Albums" />
-        {albums.map((album) => (
-          <Pressable
-            key={album.id}
-            onPress={() => router.push({ pathname: '/album/[id]', params: { id: album.id } })}
-            style={{ padding: 14, borderRadius: 15, backgroundColor: colors.surface }}>
-            <AuraText style={{ fontWeight: '700' }}>{album.title}</AuraText>
-            <AuraText style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>{album.songIds.length} tracks</AuraText>
-          </Pressable>
-        ))}
-        {!albums.length ? <AuraText style={{ color: colors.muted }}>Your albums will appear here.</AuraText> : null}
-      </View>
-      <View style={{ gap: 10 }}>
-        <SectionTitle title="Top songs" />
-        {songs.slice(0, 5).map((song) => (
-          <TrackRow key={song.id} song={song} onPress={() => void playSong(song, songs).then(() => router.push('/now-playing'))} />
-        ))}
-      </View>
-      <ActionButton title="Delete artist account" variant="danger" onPress={removeArtist} loading={working} />
+      <Heading title="Become an artist" subtitle="Share your music with the AURA community." />
+      {loadError ? <ErrorMessage message={loadError} onRetry={() => void myArtist.refetch()} /> : null}
+      {saveError ? <ErrorMessage message={saveError} /> : null}
+      <Card>
+        <Field label="Artist name" value={artistName} onChangeText={setArtistName} placeholder="Your stage name" />
+        <Field
+          label="Bio (optional)"
+          value={bio}
+          onChangeText={setBio}
+          placeholder="Tell listeners about your sound"
+          multiline
+        />
+        <ActionButton title="Create artist profile" onPress={() => void becomeArtist()} loading={working} />
+      </Card>
     </Page>
   );
 }

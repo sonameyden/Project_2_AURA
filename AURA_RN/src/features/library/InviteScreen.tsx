@@ -2,7 +2,17 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View } from 'react-native';
 
-import { BackButton, ActionButton, Artwork, AuraText, Card, ErrorMessage, Heading, LoadingState, Page } from '@/components/ui';
+import {
+  BackButton,
+  ActionButton,
+  Artwork,
+  AuraText,
+  Card,
+  ErrorMessage,
+  Heading,
+  LoadingState,
+  Page,
+} from '@/components/ui';
 import { auraApi } from '@/core/api';
 import { useAuth } from '@/core/auth-context';
 import { useAuraTheme } from '@/core/theme';
@@ -15,7 +25,11 @@ export default function InviteScreenFeature() {
   const { colors } = useAuraTheme();
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
-  const preview = useAuraQuery(['library', 'invite', code], (token) => auraApi.invitePreview(token, code ?? ''), Boolean(code));
+  const preview = useAuraQuery(
+    ['library', 'invite', code],
+    (token) => auraApi.invitePreview(token, code ?? ''),
+    Boolean(code),
+  );
   const accept = useMutation({
     mutationFn: async () => auraApi.acceptInvite(await getToken(), code ?? ''),
     onSuccess: async ({ playlistId }) => {
@@ -38,12 +52,13 @@ export default function InviteScreenFeature() {
         <Card style={{ gap: 14, alignItems: 'center' }}>
           <Artwork uri={data.owner.imageUrl} size={64} rounded={32} />
           <AuraText style={{ textAlign: 'center' }}>
-            <AuraText style={{ fontWeight: '700' }}>{data.owner.displayName ?? 'An AURA listener'}</AuraText> invited you to{' '}
-            {data.role === 'editor' ? 'build' : 'listen to'}
+            <AuraText style={{ fontWeight: '700' }}>{data.owner.displayName ?? 'An AURA listener'}</AuraText> invited
+            you to {data.role === 'editor' ? 'build' : 'listen to'}
           </AuraText>
           <AuraText style={{ fontSize: 22, fontWeight: '800', textAlign: 'center' }}>{data.playlist.title}</AuraText>
           <AuraText style={{ color: colors.muted }}>
-            {data.playlist.songCount} songs · {data.role === 'editor' ? 'You can add, remove and reorder songs' : 'View and play'}
+            {data.playlist.songCount} songs ·{' '}
+            {data.role === 'editor' ? 'You can add, remove and reorder songs' : 'View and play'}
           </AuraText>
           {acceptError ? <ErrorMessage message={acceptError} /> : null}
           <View style={{ alignSelf: 'stretch', gap: 10 }}>

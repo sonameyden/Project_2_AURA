@@ -53,25 +53,19 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
 
   return (
     <View style={{ flex: 1 }}>
-      <View
-        pointerEvents="none"
-        style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(12,13,18,0.22)' }]}
-      />
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(12,13,18,0.22)' }]} />
+      {/* Scrollable so a field near the bottom (e.g. Confirm Password) can move above the keyboard. */}
       <Page
-        scroll={false}
         transparent
         safeAreaEdges={['top', 'bottom']}
         style={{
-          flex: 1,
+          flexGrow: 1,
           justifyContent: 'space-between',
           paddingTop: signUp ? 8 : 24,
           paddingBottom: signUp ? 36 : 24,
-        }}
-      >
+        }}>
         <View style={{ alignItems: 'center', gap: 5 }}>
-          <AuraText style={{ color: colors.accent, fontSize: 28, fontWeight: '800', letterSpacing: 8 }}>
-            AURA
-          </AuraText>
+          <AuraText style={{ color: colors.accent, fontSize: 28, fontWeight: '800', letterSpacing: 8 }}>AURA</AuraText>
           {!signUp ? (
             <AuraText style={{ color: '#FFFFFFB3', fontSize: 14 }}>Discover your sonic atmosphere.</AuraText>
           ) : null}
@@ -85,8 +79,7 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
               borderWidth: 1,
               borderColor: 'rgba(255,255,255,0.1)',
               backgroundColor: 'rgba(255,255,255,0.05)',
-            }}
-          >
+            }}>
             <AuraText style={{ color: colors.accent, fontSize: 25, fontWeight: '700' }}>
               {signUp ? 'Create Account' : 'Sign In'}
             </AuraText>

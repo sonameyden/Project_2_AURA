@@ -12,7 +12,7 @@ import {
   Field,
   Heading,
   LoadingState,
-  Page,
+  PageList,
   TrackRow,
   showAlert,
 } from '@/components/ui';
@@ -87,76 +87,89 @@ export default function PlaylistDetailScreenFeature() {
         onPress: () =>
           leave.mutate(
             { playlistId: playlist.id, userId: user.uid },
-            { onSuccess: () => router.back(), onError: (leaveError) => showAlert('Could not leave', errorText(leaveError)) },
+            {
+              onSuccess: () => router.back(),
+              onError: (leaveError) => showAlert('Could not leave', errorText(leaveError)),
+            },
           ),
       },
     ]);
   };
 
   return (
-    <Page>
-      <BackButton />
-      {editing && draftTitle !== null ? (
-        <Field
-          label="Playlist name"
-          value={draftTitle}
-          onChangeText={setDraftTitle}
-          maxLength={80}
-          autoFocus
-          returnKeyType="done"
-          onSubmitEditing={saveTitle}
-          onBlur={saveTitle}
-        />
-      ) : (
-        <Heading title={playlist?.title ?? 'Playlist'} subtitle={subtitleFor(playlist, songs.length)} />
-      )}
-      {playlist ? <PlaylistPeopleRow playlist={playlist} live={playlistQuery.isFetching} /> : null}
-      {error ? <ErrorMessage message={error} onRetry={() => void playlistQuery.refetch()} /> : null}
-      {playlistQuery.isPending ? <LoadingState label="Loading playlist…" /> : null}
+    <PageList
+      data={songs}
+      keyExtractor={(song) => song.id}
+      extraData={[editing, playing?.id, playlist?.id]}
+      header={
+        <>
+          <BackButton />
+          {editing && draftTitle !== null ? (
+            <Field
+              label="Playlist name"
+              value={draftTitle}
+              onChangeText={setDraftTitle}
+              maxLength={80}
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={saveTitle}
+              onBlur={saveTitle}
+            />
+          ) : (
+            <Heading title={playlist?.title ?? 'Playlist'} subtitle={subtitleFor(playlist, songs.length)} />
+          )}
+          {playlist ? <PlaylistPeopleRow playlist={playlist} live={playlistQuery.isFetching} /> : null}
+          {error ? <ErrorMessage message={error} onRetry={() => void playlistQuery.refetch()} /> : null}
+          {playlistQuery.isPending ? <LoadingState label="Loading playlist…" /> : null}
 
-      {playlist ? (
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          {songs.length > 0 ? (
-            <ActionButton
-              title="Play all"
-              style={{ flex: 1 }}
-              onPress={() => void playSong(songs[0], songs).then(() => router.push('/now-playing'))}
+          {playlist ? (
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              {songs.length > 0 ? (
+                <ActionButton
+                  title="Play all"
+                  style={{ flex: 1 }}
+                  onPress={() => void playSong(songs[0], songs).then(() => router.push('/now-playing'))}
+                />
+              ) : null}
+              {playlist.role === 'owner' && !editing ? (
+                <ActionButton
+                  title="Share"
+                  variant="secondary"
+                  icon={<Ionicons name="share-social-outline" size={18} color={colors.text} />}
+                  style={{ minWidth: 96 }}
+                  accessibilityHint="Opens visibility, invite links and collaborators"
+                  onPress={() => router.push({ pathname: '/playlist-share/[id]', params: { id: playlist.id } })}
+                />
+              ) : null}
+              {canEdit ? (
+                <ActionButton
+                  title={editing ? 'Done' : 'Edit'}
+                  variant="secondary"
+                  style={{ flex: songs.length ? 0 : 1, minWidth: 96 }}
+                  onPress={() => {
+                    if (editing) saveTitle();
+                    else setDraftTitle(playlist.title);
+                    setEditing(!editing);
+                  }}
+                />
+              ) : null}
+            </View>
+          ) : null}
+
+          {!error && playlist && songs.length === 0 ? (
+            <EmptyState
+              title="This playlist is waiting"
+              description={
+                canEdit
+                  ? 'Add songs from any song’s ••• menu or from Now Playing.'
+                  : 'The owner hasn’t added songs yet.'
+              }
+              icon="musical-notes-outline"
             />
           ) : null}
-          {playlist.role === 'owner' && !editing ? (
-            <ActionButton
-              title="Share"
-              variant="secondary"
-              icon={<Ionicons name="share-social-outline" size={18} color={colors.text} />}
-              style={{ minWidth: 96 }}
-              accessibilityHint="Opens visibility, invite links and collaborators"
-              onPress={() => router.push({ pathname: '/playlist-share/[id]', params: { id: playlist.id } })}
-            />
-          ) : null}
-          {canEdit ? (
-            <ActionButton
-              title={editing ? 'Done' : 'Edit'}
-              variant="secondary"
-              style={{ flex: songs.length ? 0 : 1, minWidth: 96 }}
-              onPress={() => {
-                if (editing) saveTitle();
-                else setDraftTitle(playlist.title);
-                setEditing(!editing);
-              }}
-            />
-          ) : null}
-        </View>
-      ) : null}
-
-      {!error && playlist && songs.length === 0 ? (
-        <EmptyState
-          title="This playlist is waiting"
-          description={canEdit ? 'Add songs from any song’s ••• menu or from Now Playing.' : 'The owner hasn’t added songs yet.'}
-          icon="musical-notes-outline"
-        />
-      ) : null}
-
-      {songs.map((song, index) => (
+        </>
+      }
+      renderItem={({ item: song, index }) => (
         <TrackRow
           key={song.id}
           song={song}
@@ -167,7 +180,12 @@ export default function PlaylistDetailScreenFeature() {
           trailing={
             editing && playlist ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <IconButton icon="chevron-up" label={`Move ${song.title} up`} disabled={index === 0} onPress={() => move(index, -1)} />
+                <IconButton
+                  icon="chevron-up"
+                  label={`Move ${song.title} up`}
+                  disabled={index === 0}
+                  onPress={() => move(index, -1)}
+                />
                 <IconButton
                   icon="chevron-down"
                   label={`Move ${song.title} down`}
@@ -189,14 +207,20 @@ export default function PlaylistDetailScreenFeature() {
             ) : undefined
           }
         />
-      ))}
-
-      {playlist && playlist.role !== 'owner' && playlist.isMember ? (
-        <Pressable onPress={leavePlaylist} accessibilityRole="button" style={{ alignItems: 'center', paddingVertical: 8 }}>
-          <AuraText style={{ color: colors.danger, fontWeight: '600' }}>Leave playlist</AuraText>
-        </Pressable>
-      ) : null}
-    </Page>
+      )}
+      footer={
+        <>
+          {playlist && playlist.role !== 'owner' && playlist.isMember ? (
+            <Pressable
+              onPress={leavePlaylist}
+              accessibilityRole="button"
+              style={{ alignItems: 'center', paddingVertical: 8 }}>
+              <AuraText style={{ color: colors.danger, fontWeight: '600' }}>Leave playlist</AuraText>
+            </Pressable>
+          ) : null}
+        </>
+      }
+    />
   );
 }
 

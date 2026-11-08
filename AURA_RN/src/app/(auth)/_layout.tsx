@@ -10,7 +10,9 @@ import { AuthBackdrop } from '@/features/auth/components/AuthBackground';
 export default function AuthLayout() {
   return (
     <AuthBackdrop>
-      <Stack screenOptions={{ headerShown: false, animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }} />
+      <Stack
+        screenOptions={{ headerShown: false, animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }}
+      />
     </AuthBackdrop>
   );
 }

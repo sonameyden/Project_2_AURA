@@ -95,7 +95,10 @@ const inactivePlayer: PlayerContextValue = {
   clearError: noop,
 };
 
-export function PlayerProvider({ children, crossfadeSeconds = 0 }: { children: React.ReactNode } & Partial<PlayerOptions>) {
+export function PlayerProvider({
+  children,
+  crossfadeSeconds = 0,
+}: { children: React.ReactNode } & Partial<PlayerOptions>) {
   const [hydrated, setHydrated] = useState(Platform.OS !== 'web');
 
   useEffect(() => {
@@ -174,7 +177,10 @@ function ActivePlayerProvider({ children, crossfadeSeconds }: { children: React.
     async (
       nextQueue: Song[],
       nextIndex: number,
-      { atmosphereOverride = null, fadeSeconds: requestedFade = 0 }: { atmosphereOverride?: AtmosphereProfile | null; fadeSeconds?: number } = {},
+      {
+        atmosphereOverride = null,
+        fadeSeconds: requestedFade = 0,
+      }: { atmosphereOverride?: AtmosphereProfile | null; fadeSeconds?: number } = {},
     ) => {
       const nextSong = nextQueue[nextIndex];
       if (!nextSong) return;
@@ -279,12 +285,18 @@ function ActivePlayerProvider({ children, crossfadeSeconds }: { children: React.
   const playSong = useCallback(
     async (nextSong: Song, nextQueue?: Song[], atmosphereOverride?: AtmosphereProfile | null) => {
       const base = nextQueue?.length ? nextQueue : [nextSong];
-      const chosen = Math.max(0, base.findIndex((item) => item.id === nextSong.id));
+      const chosen = Math.max(
+        0,
+        base.findIndex((item) => item.id === nextSong.id),
+      );
       // Songs the user picks or skips to get a quick fade, not the full crossfade;
       // that is only for a song that reaches its end by itself (see the early-advance effect).
       if (unshuffledQueue) {
         setUnshuffledQueue(base);
-        await startTrack(shuffleKeepingCurrent(base, chosen), 0, { atmosphereOverride, fadeSeconds: SKIP_FADE_SECONDS });
+        await startTrack(shuffleKeepingCurrent(base, chosen), 0, {
+          atmosphereOverride,
+          fadeSeconds: SKIP_FADE_SECONDS,
+        });
       } else {
         await startTrack(base, chosen, { atmosphereOverride, fadeSeconds: SKIP_FADE_SECONDS });
       }
@@ -335,7 +347,17 @@ function ActivePlayerProvider({ children, crossfadeSeconds }: { children: React.
     if (next === null) return;
     earlyAdvanceFor.current = loadId;
     void startTrack(queue, next, { fadeSeconds: crossfadeSeconds });
-  }, [crossfadeSeconds, loadId, queue, queueIndex, repeatMode, startTrack, status.currentTime, status.duration, status.playing]);
+  }, [
+    crossfadeSeconds,
+    loadId,
+    queue,
+    queueIndex,
+    repeatMode,
+    startTrack,
+    status.currentTime,
+    status.duration,
+    status.playing,
+  ]);
 
   const toggleShuffle = useCallback(() => {
     if (unshuffledQueue) {

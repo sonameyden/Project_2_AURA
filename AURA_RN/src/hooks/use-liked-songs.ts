@@ -24,7 +24,9 @@ export function useToggleLike() {
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<Song[]>(key);
       queryClient.setQueryData<Song[]>(key, (current = []) =>
-        liked ? [song, ...current.filter((item) => item.id !== song.id)] : current.filter((item) => item.id !== song.id),
+        liked
+          ? [song, ...current.filter((item) => item.id !== song.id)]
+          : current.filter((item) => item.id !== song.id),
       );
       return { previous };
     },

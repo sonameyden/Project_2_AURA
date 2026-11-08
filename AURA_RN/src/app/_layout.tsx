@@ -8,7 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { FadeInDown, FadeOutDown, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AuraText, DialogHost, ToastProvider } from '@/components/ui';
+import { AppErrorBoundary, AuraText, DialogHost, OfflineBanner, ToastProvider } from '@/components/ui';
 import { AuthProvider, useAuth } from '@/core/auth-context';
 import { QueryCacheBoundary } from '@/core/query-cache-boundary';
 import { queryClient } from '@/core/query-client';
@@ -68,7 +68,14 @@ function Navigation() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.background,
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 12,
+        }}>
         <ActivityIndicator color={colors.accent} />
         <AuraText>Opening your atmosphere…</AuraText>
       </View>
@@ -113,6 +120,7 @@ function Navigation() {
         <Stack.Screen name="playlist-share/[id]" options={{ presentation: 'modal' }} />
       </Stack>
       <GlobalMiniPlayer route={segments[0]} />
+      <OfflineBanner />
     </ThemeProvider>
   );
 }
@@ -174,3 +182,6 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+/** Last-resort fallback if the app shell itself crashes (screens have their own boundaries). */
+export const ErrorBoundary = AppErrorBoundary;

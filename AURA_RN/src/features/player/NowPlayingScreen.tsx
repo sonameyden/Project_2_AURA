@@ -57,18 +57,16 @@ export default function NowPlayingScreenFeature() {
       { song, liked: !liked },
       {
         onError: (likeError) =>
-          showAlert('Could not update liked songs', likeError instanceof Error ? likeError.message : 'Please try again.'),
+          showAlert(
+            'Could not update liked songs',
+            likeError instanceof Error ? likeError.message : 'Please try again.',
+          ),
       },
     );
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <NowPlayingScene
-        look={look}
-        atmosphere={sectionAtmosphere}
-        playing={isPlaying}
-        baseColor={colors.accent}
-      />
+      <NowPlayingScene look={look} atmosphere={sectionAtmosphere} playing={isPlaying} baseColor={colors.accent} />
       <LinearGradient
         pointerEvents="none"
         // High contrast darkens the lower half so controls and lyrics stay legible.
@@ -80,7 +78,12 @@ export default function NowPlayingScreenFeature() {
         locations={[0, 0.28, 0.62, 1]}
         style={StyleSheet.absoluteFill}
       />
-      <KaleidoscopeLayer atmosphere={sectionAtmosphere} playing={isPlaying} currentTime={currentTime} duration={duration} />
+      <KaleidoscopeLayer
+        atmosphere={sectionAtmosphere}
+        playing={isPlaying}
+        currentTime={currentTime}
+        duration={duration}
+      />
       <View style={{ flex: 1 }}>
         {/* Bottom edge too: otherwise the like/queue row sits under Android's navigation bar. */}
         <Page
@@ -88,7 +91,11 @@ export default function NowPlayingScreenFeature() {
           safeAreaEdges={['top', 'bottom']}
           style={{ flexGrow: 1, justifyContent: 'space-between', paddingTop: 16, paddingBottom: 24 }}>
           <View style={styles.header}>
-            <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Close player" hitSlop={12}>
+            <Pressable
+              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel="Close player"
+              hitSlop={12}>
               <Ionicons name="chevron-down" size={28} color="#FFFFFF" />
             </Pressable>
             <Pressable
@@ -146,7 +153,11 @@ export default function NowPlayingScreenFeature() {
                 hitSlop={10}>
                 <Ionicons name={liked ? 'heart' : 'heart-outline'} size={27} color={liked ? '#FFFFFF' : '#FFFFFFB3'} />
               </Pressable>
-              <Pressable onPress={() => setShowQueue(true)} accessibilityRole="button" accessibilityLabel="Open queue" hitSlop={10}>
+              <Pressable
+                onPress={() => setShowQueue(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Open queue"
+                hitSlop={10}>
                 <Ionicons name="list" size={27} color="#FFFFFFB3" />
               </Pressable>
             </View>

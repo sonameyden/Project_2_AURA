@@ -75,7 +75,10 @@ export default function CreateAlbumScreenFeature() {
 function PressableArtwork({ onPress, uri }: { onPress: () => void; uri: string | null }) {
   const { colors } = useAuraTheme();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={{ alignSelf: 'center', alignItems: 'center', gap: 8 }}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={{ alignSelf: 'center', alignItems: 'center', gap: 8 }}>
       <Artwork uri={uri} size={132} rounded={22} />
       <AuraText style={{ color: colors.accent, fontWeight: '700' }}>Change artwork</AuraText>
     </Pressable>

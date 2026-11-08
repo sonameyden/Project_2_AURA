@@ -10,7 +10,9 @@ describe('login scene', () => {
   });
 
   it('keeps the JS horizon identical to the shader horizon', () => {
-    expect(AURA_SKSL).toContain('float horizon = 0.875 + 0.022 * sin(uv.x * 5.0 + 0.7) + 0.012 * sin(uv.x * 11.0 + 2.1);');
+    expect(AURA_SKSL).toContain(
+      'float horizon = 0.875 + 0.022 * sin(uv.x * 5.0 + 0.7) + 0.012 * sin(uv.x * 11.0 + 2.1);',
+    );
     expect(horizonY(0)).toBeCloseTo(0.875 + 0.022 * Math.sin(0.7) + 0.012 * Math.sin(2.1));
   });
 

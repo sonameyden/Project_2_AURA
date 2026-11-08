@@ -9,7 +9,10 @@ jest.mock('@react-native-async-storage/async-storage', () => ({ getItem: jest.fn
 describe('themed dialogs', () => {
   it('fall back to the system dialog if shown before the dialog host has mounted', () => {
     const spy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
-    const buttons = [{ text: 'Cancel', style: 'cancel' as const }, { text: 'Delete', style: 'destructive' as const }];
+    const buttons = [
+      { text: 'Cancel', style: 'cancel' as const },
+      { text: 'Delete', style: 'destructive' as const },
+    ];
     showAlert('Delete playlist?', 'It will be removed.', buttons);
     expect(spy).toHaveBeenCalledWith('Delete playlist?', 'It will be removed.', buttons);
     spy.mockRestore();

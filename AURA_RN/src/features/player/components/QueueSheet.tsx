@@ -40,7 +40,9 @@ export function QueueSheet({ visible, onClose }: { visible: boolean; onClose: ()
                   <AuraText style={{ width: 20, color: colors.muted }}>{index + 1}</AuraText>
                   <Artwork uri={item.artworkUrl} size={40} rounded={10} />
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <AuraText numberOfLines={1} style={{ fontWeight: '700' }}>{item.title}</AuraText>
+                    <AuraText numberOfLines={1} style={{ fontWeight: '700' }}>
+                      {item.title}
+                    </AuraText>
                     <AuraText numberOfLines={1} style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>
                       {item.artistName}
                     </AuraText>

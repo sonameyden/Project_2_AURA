@@ -76,7 +76,10 @@ function CrossfadingEffects({
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       {layers.previous ? (
         <Animated.View
-          style={[StyleSheet.absoluteFill, { opacity: fadeIn.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }]}>
+          style={[
+            StyleSheet.absoluteFill,
+            { opacity: fadeIn.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) },
+          ]}>
           <AtmosphereEffects atmosphere={layers.previous.atmosphere} playing={playing} />
         </Animated.View>
       ) : null}
@@ -106,7 +109,9 @@ function ColorWash({ color, durationMs }: { color: string; durationMs: number })
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      {layers.previous ? <View style={[StyleSheet.absoluteFill, { backgroundColor: layers.previous, opacity: 0.16 }]} /> : null}
+      {layers.previous ? (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: layers.previous, opacity: 0.16 }]} />
+      ) : null}
       <Animated.View
         style={[
           StyleSheet.absoluteFill,

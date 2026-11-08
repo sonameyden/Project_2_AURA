@@ -12,7 +12,12 @@ export const libraryApi = {
   searchHistory: (token: string) => request<SearchHistoryEntry[]>('library/search-history', token),
   addSearchHistory: (
     token: string,
-    body: { query: string; resultType: SearchHistoryEntry['result_type']; resultId: string | null; resultTitle: string | null },
+    body: {
+      query: string;
+      resultType: SearchHistoryEntry['result_type'];
+      resultId: string | null;
+      resultTitle: string | null;
+    },
   ) => request<SearchHistoryEntry>('library/search-history', token, json('POST', body)),
   deleteSearchHistory: (token: string, id?: number) =>
     request<void>(`library/search-history${id === undefined ? '' : `?id=${id}`}`, token, { method: 'DELETE' }),

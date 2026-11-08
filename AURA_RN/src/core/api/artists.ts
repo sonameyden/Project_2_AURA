@@ -3,8 +3,7 @@ import { encode, json, request } from './client';
 
 export const artistsApi = {
   artist: (token: string, id: string) => request<Artist>(`catalog/artists/${encode(id)}`, token),
-  artistSongs: (token: string, id: string) =>
-    request<Song[]>(`catalog/artists/${encode(id)}/songs`, token),
+  artistSongs: (token: string, id: string) => request<Song[]>(`catalog/artists/${encode(id)}/songs`, token),
   myArtistSongs: (token: string) => request<Song[]>('catalog/artists/me/songs', token),
   artists: (token: string) => request<Artist[]>('catalog/artists', token),
   artistStats: (token: string, id: string) => request<ArtistStats>(`catalog/artists/${encode(id)}/stats`, token),

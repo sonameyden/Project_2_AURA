@@ -26,8 +26,12 @@ export function MiniPlayer() {
       ]}>
       <Artwork uri={song.artworkUrl} size={42} rounded={12} />
       <View style={styles.details}>
-        <AuraText numberOfLines={1} style={styles.title}>{song.title}</AuraText>
-        <AuraText numberOfLines={1} style={[styles.artist, { color: colors.muted }]}>{song.artistName}</AuraText>
+        <AuraText numberOfLines={1} style={styles.title}>
+          {song.title}
+        </AuraText>
+        <AuraText numberOfLines={1} style={[styles.artist, { color: colors.muted }]}>
+          {song.artistName}
+        </AuraText>
       </View>
       <Pressable
         onPress={togglePlayback}

@@ -4,15 +4,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 
-import {
-  AuraText,
-  ErrorMessage,
-  Field,
-  GradientText,
-  Page,
-  TrackRow,
-  showAlert,
-} from '@/components/ui';
+import { AuraText, ErrorMessage, Field, GradientText, Page, TrackRow, showAlert } from '@/components/ui';
 import { auraApi } from '@/core/api';
 import { useAuth } from '@/core/auth-context';
 import { usePlayer } from '@/core/player';
@@ -115,7 +107,8 @@ export default function MoodScreenFeature() {
       />
 
       {/* Clear space below the text box so the suggestions don't crowd into it. */}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 10, marginTop: 16, marginBottom: 28 }}>
+      <View
+        style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 10, marginTop: 16, marginBottom: 28 }}>
         {suggestions.map((suggestion) => (
           <Pressable
             key={suggestion}
@@ -183,9 +176,7 @@ export default function MoodScreenFeature() {
           <AuraText style={{ color: colors.text, fontSize: 16, fontStyle: 'italic', marginBottom: 4 }}>
             {response.reply}
           </AuraText>
-          <AuraText style={{ color: colors.muted, fontSize: 13, fontWeight: '600' }}>
-            Try these environments:
-          </AuraText>
+          <AuraText style={{ color: colors.muted, fontSize: 13, fontWeight: '600' }}>Try these environments:</AuraText>
           {response.songs.map((song) => (
             <TrackRow
               key={song.id}

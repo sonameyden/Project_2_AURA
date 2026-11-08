@@ -36,7 +36,9 @@ export default function PlaylistShareScreenFeature() {
         <ErrorMessage message={playlistQuery.error.message} onRetry={() => void playlistQuery.refetch()} />
       ) : null}
       {playlist && playlist.role !== 'owner' ? (
-        <AuraText style={{ color: colors.muted }}>Only the playlist&apos;s owner can change how it&apos;s shared.</AuraText>
+        <AuraText style={{ color: colors.muted }}>
+          Only the playlist&apos;s owner can change how it&apos;s shared.
+        </AuraText>
       ) : null}
       {playlist?.role === 'owner' ? <PlaylistSharePanel playlist={playlist} /> : null}
     </Page>

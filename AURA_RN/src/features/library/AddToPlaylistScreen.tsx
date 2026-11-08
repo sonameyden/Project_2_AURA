@@ -25,7 +25,7 @@ export default function AddToPlaylistScreenFeature() {
     (token) => auraApi.song(token, songId ?? ''),
     Boolean(songId) && songId !== playingSong?.id,
   );
-  const song = songId && songId !== playingSong?.id ? requestedSong.data ?? null : playingSong;
+  const song = songId && songId !== playingSong?.id ? (requestedSong.data ?? null) : playingSong;
   // Only playlists the user owns or can edit.
   const playlistsQuery = useEditablePlaylists();
   const addSong = useAddSongToPlaylist();
@@ -34,7 +34,11 @@ export default function AddToPlaylistScreenFeature() {
 
   const add = (playlist: Playlist) => {
     if (!song) {
-      toast.show({ title: 'No song selected', message: 'Choose a song before adding it to a playlist.', variant: 'error' });
+      toast.show({
+        title: 'No song selected',
+        message: 'Choose a song before adding it to a playlist.',
+        variant: 'error',
+      });
       return;
     }
     if (playlist.songIds.includes(song.id)) {

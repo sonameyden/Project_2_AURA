@@ -42,7 +42,12 @@ describe('section timeline', () => {
 
   it('applies the section look over the base profile', () => {
     const look = lookFor(profile, 45_000, 'song');
-    expect(look).toMatchObject({ section: 'Chorus', environment: 'Energetic', catBehavior: 'Dancing', lightingStyle: 'Bright' });
+    expect(look).toMatchObject({
+      section: 'Chorus',
+      environment: 'Energetic',
+      catBehavior: 'Dancing',
+      lightingStyle: 'Bright',
+    });
     expect(look.energy).toBeCloseTo(0.96);
     expect(profileWithLook(profile, look)?.primaryColorHex).toBe('#FFAA00');
   });

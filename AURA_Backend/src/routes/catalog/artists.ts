@@ -38,11 +38,7 @@ artistRoutes.post("/artists/:id/follow", async (c) => {
   const artistId = c.req.param("id");
   const supabase = getSupabase(c.env);
 
-  const { data: artist, error: artistError } = await supabase
-    .from("artists")
-    .select("id")
-    .eq("id", artistId)
-    .single();
+  const { data: artist, error: artistError } = await supabase.from("artists").select("id").eq("id", artistId).single();
 
   if (artistError || !artist) return c.json({ error: "Artist not found" }, 404);
 
@@ -76,7 +72,7 @@ artistRoutes.get("/artists/following", async (c) => {
     .order("created_at", { ascending: false });
 
   if (error) return c.json({ error: error.message }, 500);
-  return c.json((data ?? []).flatMap((row: any) => row.artists ? [rowToArtist(row.artists)] : []));
+  return c.json((data ?? []).flatMap((row: any) => (row.artists ? [rowToArtist(row.artists)] : [])));
 });
 
 artistRoutes.get("/artists/:id/followers", async (c) => {
@@ -181,12 +177,10 @@ artistRoutes.post("/artists/me/profile-image", async (c) => {
   const extension = file.name.includes(".") ? file.name.split(".").pop() : "bin";
   const storagePath = `artists/${artistId}/profile.${extension}`;
   const supabase = getSupabase(c.env);
-  const { error: uploadError } = await supabase.storage
-    .from("audio")
-    .upload(storagePath, await file.arrayBuffer(), {
-      contentType: file.type,
-      upsert: true,
-    });
+  const { error: uploadError } = await supabase.storage.from("audio").upload(storagePath, await file.arrayBuffer(), {
+    contentType: file.type,
+    upsert: true,
+  });
 
   if (uploadError) return c.json({ error: uploadError.message }, 500);
 
@@ -203,11 +197,7 @@ artistRoutes.post("/artists/me/profile-image", async (c) => {
 });
 
 async function listSongsByArtist(c: Context<AppEnv>, artistId: string) {
-  const { data, error } = await getSupabase(c.env)
-    .from("songs")
-    .select("*")
-    .eq("artist_id", artistId)
-    .limit(50);
+  const { data, error } = await getSupabase(c.env).from("songs").select("*").eq("artist_id", artistId).limit(50);
 
   if (error) return c.json({ error: error.message }, 500);
   return c.json((data ?? []).map(rowToSong));

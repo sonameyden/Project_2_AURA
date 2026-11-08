@@ -1,9 +1,19 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Pressable } from 'react-native';
 
-import { BackButton, ActionButton, Artwork, AuraText, ErrorMessage, Field, Heading, Page, useToast } from '@/components/ui';
+import {
+  BackButton,
+  ActionButton,
+  Artwork,
+  AuraText,
+  ErrorMessage,
+  Field,
+  Heading,
+  Page,
+  useToast,
+} from '@/components/ui';
 import { auraApi } from '@/core/api';
 import { useAuth } from '@/core/auth-context';
 import { appendUploadFile, type SelectedUpload } from '@/core/native-upload';
@@ -12,6 +22,8 @@ import { IMAGE_MAX_SIZE, pickImageUpload } from '@/core/pick-image';
 import { useAuraTheme } from '@/core/theme';
 import { useRefreshCatalog } from '@/hooks/use-refresh-catalog';
 import { readAudioDuration } from '@/core/read-audio-duration';
+
+import { useMyArtist } from './hooks/use-my-artist';
 
 const maximumAudioSize = 50 * 1024 * 1024;
 
@@ -22,7 +34,10 @@ export default function UploadScreenFeature() {
   const refreshCatalog = useRefreshCatalog();
   const { getToken } = useAuth();
   const { colors } = useAuraTheme();
-  const [artistName, setArtistName] = useState('');
+  // Prefilled from the artist profile (shared, cached query); editable for features or aliases.
+  const myArtist = useMyArtist();
+  const [editedArtistName, setArtistName] = useState<string | null>(null);
+  const artistName = editedArtistName ?? myArtist.data?.name ?? '';
   const [title, setTitle] = useState('');
   const [genre, setGenre] = useState('');
   const [durationSeconds, setDurationSeconds] = useState('');
@@ -31,21 +46,6 @@ export default function UploadScreenFeature() {
   const [artwork, setArtwork] = useState<SelectedUpload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    void getToken()
-      .then((token) => auraApi.getMyArtist(token))
-      .then((artist) => {
-        if (active) setArtistName(artist.name);
-      })
-      .catch((loadError: unknown) => {
-        if (active) setError(loadError instanceof Error ? loadError.message : 'Artist profile could not be loaded.');
-      });
-    return () => {
-      active = false;
-    };
-  }, [getToken]);
 
   const selectAudio = async () => {
     const result = await DocumentPicker.getDocumentAsync({
@@ -119,8 +119,14 @@ export default function UploadScreenFeature() {
   return (
     <Page>
       <BackButton />
-      <Heading title="Upload music" subtitle={albumId ? 'Add a new track to your album.' : 'Share a new experience with AURA listeners.'} />
+      <Heading
+        title="Upload music"
+        subtitle={albumId ? 'Add a new track to your album.' : 'Share a new experience with AURA listeners.'}
+      />
       {error ? <ErrorMessage message={error} /> : null}
+      {myArtist.error instanceof Error ? (
+        <ErrorMessage message={myArtist.error.message} onRetry={() => void myArtist.refetch()} />
+      ) : null}
       <Pressable onPress={() => void selectArtwork()} style={{ alignSelf: 'center', alignItems: 'center', gap: 8 }}>
         <Artwork uri={artwork?.uri ?? null} size={132} rounded={22} />
         <AuraText style={{ color: colors.accent, fontWeight: '700' }}>Choose track artwork</AuraText>
@@ -137,11 +143,16 @@ export default function UploadScreenFeature() {
       />
       <Pressable
         onPress={() => void selectAudio()}
-        style={{ borderWidth: 1, borderStyle: 'dashed', borderColor: colors.accent, borderRadius: 16, padding: 18, alignItems: 'center' }}>
+        style={{
+          borderWidth: 1,
+          borderStyle: 'dashed',
+          borderColor: colors.accent,
+          borderRadius: 16,
+          padding: 18,
+          alignItems: 'center',
+        }}>
         <AuraText style={{ fontWeight: '700' }}>{audio?.name ?? 'Select audio file'}</AuraText>
-        <AuraText style={{ color: colors.muted, fontSize: 12, marginTop: 5 }}>
-          MP3, WAV or FLAC · up to 50 MB
-        </AuraText>
+        <AuraText style={{ color: colors.muted, fontSize: 12, marginTop: 5 }}>MP3, WAV or FLAC · up to 50 MB</AuraText>
       </Pressable>
       <ActionButton title="Upload track" onPress={() => void upload()} loading={working} />
     </Page>

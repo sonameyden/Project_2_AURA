@@ -37,7 +37,11 @@ describe('image uploads', () => {
       throw new Error('decode failed');
     });
     jest.spyOn(console, 'warn').mockImplementationOnce(() => undefined);
-    const upload = await prepareImageForUpload({ uri: 'file:///a.png', fileName: null, mimeType: 'image/png' }, 'art.png', 1600);
+    const upload = await prepareImageForUpload(
+      { uri: 'file:///a.png', fileName: null, mimeType: 'image/png' },
+      'art.png',
+      1600,
+    );
     expect(upload).toMatchObject({ uri: 'file:///a.png', name: 'art.png', mimeType: 'image/png' });
   });
 });

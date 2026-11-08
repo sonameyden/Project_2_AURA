@@ -23,10 +23,13 @@ libraryRoutes.delete("/account", async (c) => {
   } catch (error) {
     const message = (error as Error).message;
     if (message.includes("CREDENTIAL_TOO_OLD_LOGIN_AGAIN")) {
-      return c.json({
-        error: "Recent login required before deleting the account",
-        code: "requires_recent_login",
-      }, 401);
+      return c.json(
+        {
+          error: "Recent login required before deleting the account",
+          code: "requires_recent_login",
+        },
+        401,
+      );
     }
     return c.json({ error: message }, 500);
   }
@@ -58,7 +61,8 @@ libraryRoutes.put("/profile", async (c) => {
 
   if ("displayName" in body) {
     const displayName = typeof body.displayName === "string" ? body.displayName.trim() || null : null;
-    if (displayName && displayName.length > 50) return c.json({ error: "displayName must be 50 characters or fewer" }, 400);
+    if (displayName && displayName.length > 50)
+      return c.json({ error: "displayName must be 50 characters or fewer" }, 400);
     changes.display_name = displayName;
   }
   if ("bio" in body) {
@@ -119,15 +123,13 @@ libraryRoutes.get("/liked", async (c) => {
     .order("created_at", { ascending: false });
 
   if (error) return c.json({ error: error.message }, 500);
-  return c.json((data ?? []).flatMap((row: any) => row.songs ? [rowToSong(row.songs)] : []));
+  return c.json((data ?? []).flatMap((row: any) => (row.songs ? [rowToSong(row.songs)] : [])));
 });
 
 libraryRoutes.post("/liked/:songId", async (c) => {
   const userId = c.get("auth").uid;
   const songId = c.req.param("songId");
-  const { error } = await getSupabase(c.env)
-    .from("liked_songs")
-    .upsert({ user_id: userId, song_id: songId });
+  const { error } = await getSupabase(c.env).from("liked_songs").upsert({ user_id: userId, song_id: songId });
 
   if (error) return c.json({ error: error.message }, 500);
   return c.json({ liked: true, songId });
@@ -136,11 +138,7 @@ libraryRoutes.post("/liked/:songId", async (c) => {
 libraryRoutes.delete("/liked/:songId", async (c) => {
   const userId = c.get("auth").uid;
   const songId = c.req.param("songId");
-  const { error } = await getSupabase(c.env)
-    .from("liked_songs")
-    .delete()
-    .eq("user_id", userId)
-    .eq("song_id", songId);
+  const { error } = await getSupabase(c.env).from("liked_songs").delete().eq("user_id", userId).eq("song_id", songId);
 
   if (error) return c.json({ error: error.message }, 500);
   return c.json({ liked: false, songId });
@@ -149,9 +147,7 @@ libraryRoutes.delete("/liked/:songId", async (c) => {
 libraryRoutes.post("/history/:songId", async (c) => {
   const userId = c.get("auth").uid;
   const songId = c.req.param("songId");
-  const { error } = await getSupabase(c.env)
-    .from("listening_history")
-    .insert({ user_id: userId, song_id: songId });
+  const { error } = await getSupabase(c.env).from("listening_history").insert({ user_id: userId, song_id: songId });
 
   if (error) return c.json({ error: error.message }, 500);
   return c.json({ recorded: true, songId }, 201);
@@ -167,7 +163,7 @@ libraryRoutes.get("/history", async (c) => {
     .limit(100);
 
   if (error) return c.json({ error: error.message }, 500);
-  return c.json((data ?? []).map((row: any) => row.songs ? rowToSong(row.songs) : null).filter(Boolean));
+  return c.json((data ?? []).map((row: any) => (row.songs ? rowToSong(row.songs) : null)).filter(Boolean));
 });
 
 libraryRoutes.get("/search-history", async (c) => {

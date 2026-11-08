@@ -93,7 +93,10 @@ discoverRoutes.get("/search", async (c) => {
 discoverRoutes.get("/for-you", async (c) => {
   const supabase = getSupabase(c.env);
   try {
-    const [signals, catalog] = await Promise.all([loadTasteSignals(supabase, c.get("auth").uid), fetchCatalog(supabase)]);
+    const [signals, catalog] = await Promise.all([
+      loadTasteSignals(supabase, c.get("auth").uid),
+      fetchCatalog(supabase),
+    ]);
     const profile = buildTasteProfile(signals, catalog);
     const items = recommend(profile, catalog, signals);
     return c.json({

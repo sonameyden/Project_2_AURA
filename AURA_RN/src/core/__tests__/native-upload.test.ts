@@ -56,7 +56,10 @@ describe('file uploads', () => {
     globalThis.fetch = jest.fn() as unknown as typeof fetch;
     const form = new FormData();
 
-    const result = await request<{ id: string }>('catalog/songs/upload', 'token-123', { method: 'POST', formData: form });
+    const result = await request<{ id: string }>('catalog/songs/upload', 'token-123', {
+      method: 'POST',
+      formData: form,
+    });
 
     expect(result).toEqual({ id: 'song-1' });
     expect(globalThis.fetch).not.toHaveBeenCalled();
@@ -67,7 +70,9 @@ describe('file uploads', () => {
 
   it("surface the server's error message, e.g. a size limit", async () => {
     installFakeXhr(413, JSON.stringify({ error: 'Profile images must be 5 MB or smaller' }));
-    await expect(request('library/profile-image', 't', { method: 'POST', formData: new FormData() })).rejects.toMatchObject({
+    await expect(
+      request('library/profile-image', 't', { method: 'POST', formData: new FormData() }),
+    ).rejects.toMatchObject({
       message: 'Profile images must be 5 MB or smaller',
       status: 413,
     });
@@ -75,8 +80,13 @@ describe('file uploads', () => {
 
   it('leave ordinary JSON requests on fetch', async () => {
     const sent = installFakeXhr(200, '{}');
-    globalThis.fetch = jest.fn(async () => ({ status: 200, text: async () => '{"ok":true}' })) as unknown as typeof fetch;
-    await expect(request('library/profile', 't', { method: 'PUT', body: { bio: 'hi' } })).resolves.toEqual({ ok: true });
+    globalThis.fetch = jest.fn(async () => ({
+      status: 200,
+      text: async () => '{"ok":true}',
+    })) as unknown as typeof fetch;
+    await expect(request('library/profile', 't', { method: 'PUT', body: { bio: 'hi' } })).resolves.toEqual({
+      ok: true,
+    });
     expect(sent).toHaveLength(0);
   });
 });

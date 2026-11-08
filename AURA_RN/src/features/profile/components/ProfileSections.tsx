@@ -23,7 +23,9 @@ export function ProfileSections({ profile }: { profile: PublicProfile }) {
 
       {profile.artist ? (
         <Card
-          onPress={() => router.push({ pathname: '/artist/[id]', params: { id: profile.isSelf ? 'me' : profile.artist!.id } })}
+          onPress={() =>
+            router.push({ pathname: '/artist/[id]', params: { id: profile.isSelf ? 'me' : profile.artist!.id } })
+          }
           accessibilityLabel={`Artist page: ${profile.artist.name}`}
           style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Ionicons name="mic-outline" size={22} color={colors.accent} />
@@ -46,7 +48,14 @@ export function ProfileSections({ profile }: { profile: PublicProfile }) {
               <SectionTitle title="Top genres" />
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {profile.topGenres.map((genre) => (
-                  <View key={genre} style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 14, backgroundColor: colors.accentSoft }}>
+                  <View
+                    key={genre}
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 7,
+                      borderRadius: 14,
+                      backgroundColor: colors.accentSoft,
+                    }}>
                     <AuraText style={{ fontSize: 13, textTransform: 'capitalize' }}>{genre}</AuraText>
                   </View>
                 ))}

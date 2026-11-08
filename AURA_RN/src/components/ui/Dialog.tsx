@@ -59,7 +59,12 @@ export function DialogHost() {
       animationType="fade"
       statusBarTranslucent
       // Android's back button acts like Cancel (or the only button), as with system dialogs.
-      onRequestClose={() => close(current?.buttons.find((button) => button.style === 'cancel') ?? (current?.buttons.length === 1 ? current.buttons[0] : undefined))}>
+      onRequestClose={() =>
+        close(
+          current?.buttons.find((button) => button.style === 'cancel') ??
+            (current?.buttons.length === 1 ? current.buttons[0] : undefined),
+        )
+      }>
       {current ? <DialogCard key={current.id} request={current} onClose={close} /> : null}
     </Modal>
   );
@@ -86,7 +91,9 @@ function DialogCard({ request, onClose }: { request: DialogRequest; onClose: (bu
           },
         ]}>
         <AuraText style={[styles.title, { color: colors.text }]}>{request.title}</AuraText>
-        {request.message ? <AuraText style={[styles.message, { color: colors.muted }]}>{request.message}</AuraText> : null}
+        {request.message ? (
+          <AuraText style={[styles.message, { color: colors.muted }]}>{request.message}</AuraText>
+        ) : null}
         <View style={[styles.buttons, stacked ? styles.stacked : styles.row]}>
           {ordered.map((button) => {
             const destructive = button.style === 'destructive';

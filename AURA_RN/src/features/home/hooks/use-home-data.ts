@@ -13,9 +13,17 @@ export function useHomeData() {
       { queryKey: ['home', 'trending', user?.uid], queryFn: async () => auraApi.trending(await getToken()), enabled },
       { queryKey: ['home', 'for-you', user?.uid], queryFn: async () => auraApi.forYou(await getToken()), enabled },
       { queryKey: ['home', 'artists', user?.uid], queryFn: async () => auraApi.artists(await getToken()), enabled },
-      { queryKey: ['home', 'new-releases', user?.uid], queryFn: async () => auraApi.newReleases(await getToken()), enabled },
+      {
+        queryKey: ['home', 'new-releases', user?.uid],
+        queryFn: async () => auraApi.newReleases(await getToken()),
+        enabled,
+      },
       { queryKey: ['library', 'history', user?.uid], queryFn: async () => auraApi.history(await getToken()), enabled },
-      { queryKey: ['library', 'followed-artists', user?.uid], queryFn: async () => auraApi.followedArtists(await getToken()), enabled },
+      {
+        queryKey: ['library', 'followed-artists', user?.uid],
+        queryFn: async () => auraApi.followedArtists(await getToken()),
+        enabled,
+      },
     ],
   });
   const all = [trending, forYou, artists, newReleases, history, followed];

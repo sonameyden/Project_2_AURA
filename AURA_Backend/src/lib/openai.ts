@@ -13,13 +13,13 @@ async function callOpenAiJson(
   env: Env,
   systemPrompt: string,
   userPrompt: string,
-  { temperature = 0.7, timeoutMs = 25_000 }: { temperature?: number; timeoutMs?: number } = {}
+  { temperature = 0.7, timeoutMs = 25_000 }: { temperature?: number; timeoutMs?: number } = {},
 ): Promise<any> {
   const res = await fetch(OPENAI_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${env.OPENAI_API_KEY}`,
+      Authorization: `Bearer ${env.OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
       model: MODEL,
@@ -47,8 +47,8 @@ async function callOpenAiJson(
 export interface MoodInterpretation {
   mode: "recommendations" | "direct_play";
   mood: string;
-  targetValence: number;   // 0..1
-  targetEnergy: number;    // 0..1
+  targetValence: number; // 0..1
+  targetEnergy: number; // 0..1
   suggestedGenres: string[];
   atmosphereHint: string;
   requestedSongTitle: string | null;
@@ -94,7 +94,7 @@ export async function generateAtmosphereProfile(
   env: Env,
   song: Song,
   lyricsText: string | null,
-  userMoodText: string | null
+  userMoodText: string | null,
 ): Promise<AtmosphereProfile> {
   const systemPrompt = `You are the Atmosphere Engine for a music app called AURA. Your job is to
 interpret a song (and optionally the listener's stated mood) into a structured
@@ -128,8 +128,12 @@ Do not include any text outside the JSON object.`;
     `Song: "${song.title}" by ${song.artistName}`,
     song.genre ? `Genre: ${song.genre}` : null,
     lyricsText ? `Lyrics:\n${lyricsText}` : "No lyrics available for this song.",
-    userMoodText ? `The listener described their current feeling as: "${userMoodText}"` : "No user mood context was provided — base the profile purely on the song itself.",
-  ].filter(Boolean).join("\n\n");
+    userMoodText
+      ? `The listener described their current feeling as: "${userMoodText}"`
+      : "No user mood context was provided — base the profile purely on the song itself.",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   const result = await callOpenAiJson(env, systemPrompt, userPromptParts);
   // Schema-check every field (enums, colours, ranges); the song id is enforced.
@@ -172,7 +176,7 @@ export async function generateSectionTimeline(
   env: Env,
   song: Song,
   profile: AtmosphereProfile,
-  lyrics: { text: string; startTimeMs: number }[]
+  lyrics: { text: string; startTimeMs: number }[],
 ): Promise<unknown> {
   const systemPrompt = `You design the visual timeline for one song in the AURA music app.
 Return ONLY a JSON object: { "sections": [ ... ] } with 4-10 sections in time order. Each section:
@@ -200,7 +204,9 @@ Keep colours related to the base palette so changes feel like one world evolving
     `Song: "${song.title}" by ${song.artistName}${song.genre ? ` (${song.genre})` : ""}`,
     `Duration: ${Math.round(song.durationMs / 1000)} seconds (${song.durationMs} ms)`,
     `Base atmosphere: emotion ${profile.emotion}, energy ${profile.energy}, valence ${profile.valence}, environment ${profile.environment}, primary ${profile.primaryColorHex}, secondary ${profile.secondaryColorHexes.join(", ")}, lighting ${profile.lightingStyle}, cat ${profile.catBehavior}`,
-    timedLyrics ? `Timed lyrics:\n${timedLyrics}` : "No lyrics are available; estimate a typical structure from the duration and genre.",
+    timedLyrics
+      ? `Timed lyrics:\n${timedLyrics}`
+      : "No lyrics are available; estimate a typical structure from the duration and genre.",
   ].join("\n\n");
 
   return callOpenAiJson(env, systemPrompt, userPrompt, { temperature: 0.5, timeoutMs: 20_000 });

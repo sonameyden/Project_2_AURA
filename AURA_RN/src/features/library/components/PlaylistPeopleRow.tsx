@@ -15,7 +15,14 @@ export function PlaylistPeopleRow({ playlist, live }: { playlist: PlaylistDetail
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
       <View style={{ flexDirection: 'row' }}>
         {people.slice(0, 5).map((person, index) => (
-          <View key={person.userId} style={{ marginLeft: index === 0 ? 0 : -10, borderRadius: 16, borderWidth: 2, borderColor: colors.background }}>
+          <View
+            key={person.userId}
+            style={{
+              marginLeft: index === 0 ? 0 : -10,
+              borderRadius: 16,
+              borderWidth: 2,
+              borderColor: colors.background,
+            }}>
             <Artwork uri={person.imageUrl} size={28} rounded={14} />
           </View>
         ))}
@@ -35,7 +42,9 @@ export function PlaylistPeopleRow({ playlist, live }: { playlist: PlaylistDetail
           style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}
           accessible
           accessibilityLabel="Live: changes from collaborators appear automatically">
-          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: live ? colors.accentCyan : colors.teal }} />
+          <View
+            style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: live ? colors.accentCyan : colors.teal }}
+          />
           <AuraText style={{ fontSize: 12, color: colors.muted }}>Live</AuraText>
         </View>
       ) : null}

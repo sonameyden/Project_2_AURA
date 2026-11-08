@@ -6,7 +6,18 @@ import { rankCatalog } from "../src/lib/discovery/naturalSearch";
 import { heuristicInterpretation, validateInterpretation } from "../src/lib/discovery/queryInterpretation";
 import { buildTasteProfile, recommend, type TasteSignals } from "../src/lib/discovery/tasteProfile";
 
-function song(id: string, overrides: Partial<{ genre: string; artist: string; energy: number; valence: number; moods: string[]; activities: string[]; plays: number }> = {}): SongFeatures {
+function song(
+  id: string,
+  overrides: Partial<{
+    genre: string;
+    artist: string;
+    energy: number;
+    valence: number;
+    moods: string[];
+    activities: string[];
+    plays: number;
+  }> = {},
+): SongFeatures {
   return rowToFeatures({
     id,
     title: `Song ${id}`,
@@ -28,7 +39,8 @@ function song(id: string, overrides: Partial<{ genre: string; artist: string; en
 }
 
 describe("keyword fallback interpreter (proposal objective 2 test set)", () => {
-  const level = (value: number | null) => (value === null ? null : value < 0.45 ? "low" : value > 0.55 ? "high" : "mid");
+  const level = (value: number | null) =>
+    value === null ? null : value < 0.45 ? "low" : value > 0.55 ? "high" : "mid";
 
   it("covers at least 27 of the 30 test queries", () => {
     const failures: string[] = [];
@@ -40,7 +52,8 @@ describe("keyword fallback interpreter (proposal objective 2 test set)", () => {
         (!wanted.valence || level(result.targetValence) === wanted.valence) &&
         (!wanted.activity || result.activities.includes(wanted.activity)) &&
         (!wanted.mood || result.moods.includes(wanted.mood)) &&
-        (!wanted.genre || result.genres.some((genre) => genre.replace("-", " ") === wanted.genre || genre === wanted.genre));
+        (!wanted.genre ||
+          result.genres.some((genre) => genre.replace("-", " ") === wanted.genre || genre === wanted.genre));
       if (!ok) failures.push(q);
     }
     // ≥ 90% (27/30) is the proposal's target; OpenAI is expected to do better.
@@ -56,9 +69,15 @@ describe("validateInterpretation", () => {
   it("drops malformed fields and clamps numbers", () => {
     const result = validateInterpretation(
       { moods: ["Calm", 4, ""], genres: "pop", targetEnergy: 3, targetValence: "high", activities: ["study"] },
-      "calm study"
+      "calm study",
     );
-    expect(result).toMatchObject({ moods: ["calm"], genres: [], targetEnergy: 1, targetValence: null, activities: ["study"] });
+    expect(result).toMatchObject({
+      moods: ["calm"],
+      genres: [],
+      targetEnergy: 1,
+      targetValence: null,
+      activities: ["study"],
+    });
   });
 
   it("rejects output with no usable signal", () => {
@@ -87,7 +106,16 @@ describe("rankCatalog", () => {
   });
 
   it("ignores placeholder 0.5/0.5 features", () => {
-    const placeholder = rowToFeatures({ id: "p", title: "P", artist_id: "a", artist_name: "A", duration_ms: 1, stream_url: "", valence: 0.5, energy: 0.5 });
+    const placeholder = rowToFeatures({
+      id: "p",
+      title: "P",
+      artist_id: "a",
+      artist_name: "A",
+      duration_ms: 1,
+      stream_url: "",
+      valence: 0.5,
+      energy: 0.5,
+    });
     expect(placeholder.energy).toBeNull();
     expect(placeholder.valence).toBeNull();
   });
@@ -120,23 +148,53 @@ describe("taste profile and recommendations", () => {
     expect(profile.label).toBe("calm indie");
   });
 
-  it("recommends unheard songs that fit, with a reason", () => {
+  it("recommends unheard songs that fit first, with a reason", () => {
     const items = recommend(buildTasteProfile(signals, catalog), catalog, signals);
-    expect(items.map((item) => item.song.id)).not.toContain("indie-1");
-    expect(items.map((item) => item.song.id)).not.toContain("indie-2");
+    const ids = items.map((item) => item.song.id);
+    // Unheard songs come first, best match on top; liked songs are never recommended.
+    expect(ids.slice(0, 3).sort()).toEqual(["indie-3", "metal-1", "pop-1"]);
     expect(items[0].song.id).toBe("indie-3");
     expect(items[0].reason).toBe("Because you like calm indie");
+    expect(ids).not.toContain("indie-1");
+  });
+
+  it("tops up a short list with played-but-not-liked songs, after the new ones", () => {
+    const items = recommend(buildTasteProfile(signals, catalog), catalog, signals);
+    const ids = items.map((item) => item.song.id);
+    // Only 3 unheard songs here, so the played (not liked) indie-2 is added at the end.
+    expect(ids.indexOf("indie-2")).toBe(3);
+    expect(items[3].reason).toBe("Back in your rotation");
+  });
+
+  it("doesn't top up when there are enough new songs", () => {
+    const big = [
+      ...catalog,
+      ...Array.from({ length: 10 }, (_, n) =>
+        song(`new-${n}`, { genre: "indie", energy: 0.3, valence: 0.5, artist: `N${n}` }),
+      ),
+    ];
+    const items = recommend(buildTasteProfile(signals, big), big, signals);
+    expect(items.some((item) => item.reason === "Back in your rotation")).toBe(false);
   });
 
   it("falls back to popular songs for new users", () => {
-    const empty: TasteSignals = { likedSongIds: [], historySongIds: [], followedArtistIds: [], followedArtistNames: {} };
+    const empty: TasteSignals = {
+      likedSongIds: [],
+      historySongIds: [],
+      followedArtistIds: [],
+      followedArtistNames: {},
+    };
     const items = recommend(buildTasteProfile(empty, catalog), catalog, empty);
     expect(items[0].song.id).toBe("pop-1");
     expect(items[0].reason).toBe("Popular on AURA right now");
   });
 
   it("explains follows by artist name", () => {
-    const followSignals: TasteSignals = { ...signals, followedArtistIds: ["D"], followedArtistNames: { D: "Doom Band" } };
+    const followSignals: TasteSignals = {
+      ...signals,
+      followedArtistIds: ["D"],
+      followedArtistNames: { D: "Doom Band" },
+    };
     const items = recommend(buildTasteProfile(followSignals, catalog), catalog, followSignals);
     expect(items.find((item) => item.song.id === "metal-1")?.reason).toBe("Because you follow Doom Band");
   });

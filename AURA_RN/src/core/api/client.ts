@@ -111,7 +111,9 @@ export function sendMultipart(
  */
 export function sendFailureMessage(error: unknown) {
   if (!(error instanceof Error)) return 'Unable to reach the AURA backend.';
-  const offline = /network|failed to fetch|timed? ?out|timeout|offline|unreachable|connection|resolve host/i.test(error.message);
+  const offline = /network|failed to fetch|timed? ?out|timeout|offline|unreachable|connection|resolve host/i.test(
+    error.message,
+  );
   return offline ? `Network error: ${error.message}` : `The request could not be sent: ${error.message}`;
 }
 

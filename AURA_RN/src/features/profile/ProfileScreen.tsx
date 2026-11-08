@@ -78,7 +78,10 @@ export default function ProfileScreenFeature() {
         uploading={upload.isPending}
         emptyBio={
           editing ? null : (
-            <Card onPress={startEditing} accessibilityLabel="Add a bio" style={{ alignItems: 'center', paddingVertical: 14 }}>
+            <Card
+              onPress={startEditing}
+              accessibilityLabel="Add a bio"
+              style={{ alignItems: 'center', paddingVertical: 14 }}>
               <AuraText style={{ color: colors.muted, textAlign: 'center' }}>
                 Add a bio so people know what you&apos;re into →
               </AuraText>

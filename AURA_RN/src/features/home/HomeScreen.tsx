@@ -26,7 +26,8 @@ export default function HomeScreenFeature() {
   const { user } = useAuth();
   const { playSong, song: playing } = usePlayer();
   const openAddToPlaylist = useOpenAddToPlaylist();
-  const { trending, forYou, artists, newReleases, recentlyPlayed, followedArtists, loading, error, retry } = useHomeData();
+  const { trending, forYou, artists, newReleases, recentlyPlayed, followedArtists, loading, error, retry } =
+    useHomeData();
   const profileQuery = useUserProfile();
   const [orbScale] = useState(() => new Animated.Value(1));
   const profileImage = profileQuery.data?.imageUrl || user?.photoURL || null;
@@ -110,9 +111,17 @@ export default function HomeScreenFeature() {
           marginBottom: 4,
           backgroundColor: colors.surface,
         }}>
-        <Image source={moodBackground} contentFit="cover" style={{ position: 'absolute', width: '100%', height: '100%', opacity: 0.25 }} />
+        <Image
+          source={moodBackground}
+          contentFit="cover"
+          style={{ position: 'absolute', width: '100%', height: '100%', opacity: 0.25 }}
+        />
         <LinearGradient
-          colors={isLight ? ['rgba(248,249,253,0.08)', 'rgba(248,249,253,0.58)'] : ['rgba(12,13,18,0.08)', 'rgba(12,13,18,0.68)']}
+          colors={
+            isLight
+              ? ['rgba(248,249,253,0.08)', 'rgba(248,249,253,0.58)']
+              : ['rgba(12,13,18,0.08)', 'rgba(12,13,18,0.68)']
+          }
           style={{ position: 'absolute', width: '100%', height: '100%' }}
         />
         {isLight ? (
@@ -129,11 +138,16 @@ export default function HomeScreenFeature() {
               opacity: 0.8,
               transform: [{ scale: orbScale }],
             }}>
-            <LinearGradient colors={['#DDD4E899', '#EAD9DD66', '#EAD9DD00']} style={{ width: '100%', height: '100%' }} />
+            <LinearGradient
+              colors={['#DDD4E899', '#EAD9DD66', '#EAD9DD00']}
+              style={{ width: '100%', height: '100%' }}
+            />
           </Animated.View>
         ) : null}
         <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 20 }}>
-          <AuraText style={{ color: isLight ? '#29262D' : '#FFFFFF', fontSize: 20, fontWeight: '700' }}>How are you feeling?</AuraText>
+          <AuraText style={{ color: isLight ? '#29262D' : '#FFFFFF', fontSize: 20, fontWeight: '700' }}>
+            How are you feeling?
+          </AuraText>
           <AuraText style={{ color: isLight ? '#77717A' : '#FFFFFFB3', fontSize: 12, marginTop: 5 }}>
             Let AI find the perfect world for you.
           </AuraText>
@@ -141,11 +155,17 @@ export default function HomeScreenFeature() {
       </Pressable>
 
       {error ? <ErrorMessage message={errorMessage} onRetry={() => void retry()} /> : null}
-      {loading ? <ActivityIndicator color={colors.accent} style={{ marginTop: 24 }} accessibilityLabel="Loading discovery" /> : null}
+      {loading ? (
+        <ActivityIndicator color={colors.accent} style={{ marginTop: 24 }} accessibilityLabel="Loading discovery" />
+      ) : null}
 
-      {forYou?.items.length ? (
-        <HorizontalSection title="Made for you" subtitle={forYouSubtitle}>
-          {forYou.items.map((item) => songCard(item.song, forYouSongs, item.reason))}
+      {/* Always shown once Home has loaded; with nothing to recommend yet it explains how to tune it. */}
+      {forYou?.items.length || !loading ? (
+        <HorizontalSection
+          title="Made for you"
+          subtitle={forYouSubtitle}
+          emptyMessage="Play and like a few songs, and AURA will tune this row to your taste.">
+          {(forYou?.items ?? []).map((item) => songCard(item.song, forYouSongs, item.reason))}
         </HorizontalSection>
       ) : null}
 
@@ -170,7 +190,11 @@ export default function HomeScreenFeature() {
       {newReleases.length ? (
         <HorizontalSection title="New Releases">
           {newReleases.map((album) => (
-            <AlbumCard key={album.id} album={album} onPress={() => router.push({ pathname: '/album/[id]', params: { id: album.id } })} />
+            <AlbumCard
+              key={album.id}
+              album={album}
+              onPress={() => router.push({ pathname: '/album/[id]', params: { id: album.id } })}
+            />
           ))}
         </HorizontalSection>
       ) : null}

@@ -31,30 +31,22 @@ const effectColors: Record<EffectKind, string> = {
   spark: '#FFD18D',
 };
 
-export function AtmosphereEffects({
-  atmosphere,
-  playing,
-}: {
-  atmosphere: AtmosphereProfile | null;
-  playing: boolean;
-}) {
+export function AtmosphereEffects({ atmosphere, playing }: { atmosphere: AtmosphereProfile | null; playing: boolean }) {
   const { height } = useWindowDimensions();
   const environment = atmosphere?.environment ?? 'Nature';
   const kind = atmosphere ? effectByEnvironment[environment] : 'mote';
   const energy = Math.max(0, Math.min(1, atmosphere?.energy ?? 0.35));
   const { particleCount } = useVisualTier();
   // Counts were tuned for the Medium tier (28 kaleidoscope particles).
-  const count = Math.round((kind === 'star' ? 22 : kind === 'leaf' || kind === 'petal' ? 14 : 16) * (particleCount / 28));
+  const count = Math.round(
+    (kind === 'star' ? 22 : kind === 'leaf' || kind === 'petal' ? 14 : 16) * (particleCount / 28),
+  );
   const colors = atmosphere?.secondaryColorHexes ?? [];
-  const tint = isColor(atmosphere?.primaryColorHex)
-    ? atmosphere.primaryColorHex
-    : effectColors[kind];
+  const tint = isColor(atmosphere?.primaryColorHex) ? atmosphere.primaryColorHex : effectColors[kind];
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      {environment === 'Heaven' || environment === 'Hopeful' ? (
-        <LightRays color={tint} energy={energy} />
-      ) : null}
+      {environment === 'Heaven' || environment === 'Hopeful' ? <LightRays color={tint} energy={energy} /> : null}
       {environment === 'Nature'
         ? Array.from({ length: 7 }, (_, index) => (
             <AtmosphereParticle
@@ -82,15 +74,17 @@ export function AtmosphereEffects({
             />
           ))
         : null}
-      {kind === 'spark' ? (
-        <EnergyRings color={tint} energy={energy} playing={playing} />
-      ) : null}
+      {kind === 'spark' ? <EnergyRings color={tint} energy={energy} playing={playing} /> : null}
       {Array.from({ length: count }, (_, index) => (
         <AtmosphereParticle
           key={`${environment}-${index}`}
           index={index}
           kind={kind}
-          tint={index % 4 === 0 && isColor(colors[index % Math.max(colors.length, 1)]) ? colors[index % colors.length] : effectColors[kind]}
+          tint={
+            index % 4 === 0 && isColor(colors[index % Math.max(colors.length, 1)])
+              ? colors[index % colors.length]
+              : effectColors[kind]
+          }
           height={height}
           energy={energy}
           playing={playing}
@@ -151,9 +145,7 @@ function AtmosphereParticle({
     outputRange: [0, kind === 'star' ? 0.72 : 0.52, 0.52, 0],
   });
   const left = `${((index * 47 + 11) % 94) + 3}%`;
-  const top = grounded
-    ? `${((index * 9 + 2) % 25) + 68}%`
-    : `${((index * 31 + 9) % 68) + 4}%`;
+  const top = grounded ? `${((index * 9 + 2) % 25) + 68}%` : `${((index * 31 + 9) % 68) + 4}%`;
   const size = kind === 'leaf' || kind === 'petal' ? 20 + (index % 3) * 4 : 5 + (index % 3) * 2;
 
   if (kind === 'bubble') {
@@ -242,10 +234,7 @@ function AtmosphereParticle({
 }
 
 function LightRays({ color, energy }: { color: string; energy: number }) {
-  const rayColors: [string, string] = [
-    `${color}${Math.round(20 + energy * 18).toString(16)}`,
-    `${color}00`,
-  ];
+  const rayColors: [string, string] = [`${color}${Math.round(20 + energy * 18).toString(16)}`, `${color}00`];
   return (
     <View
       pointerEvents="none"
@@ -276,15 +265,7 @@ function LightRays({ color, energy }: { color: string; energy: number }) {
   );
 }
 
-function EnergyRings({
-  color,
-  energy,
-  playing,
-}: {
-  color: string;
-  energy: number;
-  playing: boolean;
-}) {
+function EnergyRings({ color, energy, playing }: { color: string; energy: number; playing: boolean }) {
   const [rotation] = useState(() => new Animated.Value(0));
   const { motion } = useVisualTier();
 
@@ -317,7 +298,12 @@ function EnergyRings({
             alignItems: 'center',
             justifyContent: 'center',
             opacity: 0.16 + energy * 0.1,
-            transform: [{ rotate: index % 2 ? rotate : rotation.interpolate({ inputRange: [0, 1], outputRange: ['360deg', '0deg'] }) }],
+            transform: [
+              {
+                rotate:
+                  index % 2 ? rotate : rotation.interpolate({ inputRange: [0, 1], outputRange: ['360deg', '0deg'] }),
+              },
+            ],
           }}>
           <MaterialCommunityIcons name="hexagon-outline" size={230 - index * 36} color={color} />
         </Animated.View>
@@ -331,4 +317,3 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
 });
-

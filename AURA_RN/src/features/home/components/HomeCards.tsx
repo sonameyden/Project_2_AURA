@@ -1,23 +1,55 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Children } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Artwork, AuraText, GradientText } from '@/components/ui';
 import { useAuraTheme } from '@/core/theme';
 import type { Album, Artist, Song } from '@/core/types';
 
-export function HorizontalSection({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+export function HorizontalSection({
+  title,
+  subtitle,
+  emptyMessage,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  /** Shown instead of the row when it has no items, so the section stays visible. */
+  emptyMessage?: string;
+  children: React.ReactNode;
+}) {
   const { colors } = useAuraTheme();
+  const empty = Children.count(children) === 0;
   return (
     <View style={{ marginTop: 20 }}>
       <GradientText style={{ fontSize: 20, fontWeight: '700' }}>{title}</GradientText>
       {subtitle ? <AuraText style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>{subtitle}</AuraText> : null}
-      <ScrollView
-        horizontal
-        nestedScrollEnabled
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 12, paddingTop: 8, paddingBottom: 10 }}>
-        {children}
-      </ScrollView>
+      {empty && emptyMessage ? (
+        <View
+          style={{
+            marginTop: 10,
+            marginBottom: 6,
+            padding: 16,
+            borderRadius: 18,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 12,
+          }}>
+          <Ionicons name="sparkles-outline" size={22} color={colors.accent} />
+          <AuraText style={{ flex: 1, color: colors.muted, fontSize: 13, lineHeight: 19 }}>{emptyMessage}</AuraText>
+        </View>
+      ) : (
+        <ScrollView
+          horizontal
+          nestedScrollEnabled
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 12, paddingTop: 8, paddingBottom: 10 }}>
+          {children}
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -47,7 +79,11 @@ export function SongCard({
         accessibilityLabel={`Play ${song.title} by ${song.artistName}${playing ? ', now playing' : ''}${reason ? `. ${reason}` : ''}`}
         style={[
           styles.cover,
-          { backgroundColor: colors.surface, borderColor: playing ? colors.accent : colors.border, borderWidth: playing ? 2 : 1 },
+          {
+            backgroundColor: colors.surface,
+            borderColor: playing ? colors.accent : colors.border,
+            borderWidth: playing ? 2 : 1,
+          },
         ]}>
         <Artwork uri={song.artworkUrl} size={1} rounded={20} style={{ width: '100%', height: '100%' }} />
         {playing ? (
@@ -103,7 +139,11 @@ export function ArtistCard({ artist, onPress }: { artist: Artist; onPress: () =>
 export function AlbumCard({ album, onPress }: { album: Album; onPress: () => void }) {
   const { colors } = useAuraTheme();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Album ${album.title}`} style={{ width: 160, gap: 6 }}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Album ${album.title}`}
+      style={{ width: 160, gap: 6 }}>
       <View style={[styles.cover, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}>
         <Artwork uri={album.artworkUrl} size={1} rounded={20} style={{ width: '100%', height: '100%' }} />
       </View>

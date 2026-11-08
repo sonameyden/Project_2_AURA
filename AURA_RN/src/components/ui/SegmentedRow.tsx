@@ -26,7 +26,10 @@ export function SegmentedRow<T extends string>({
         <AuraText style={{ fontWeight: '600' }}>{label}</AuraText>
         {description ? <AuraText style={{ color: colors.muted, fontSize: 12 }}>{description}</AuraText> : null}
       </View>
-      <View style={[styles.segments, { borderColor: colors.border }]} accessibilityRole="radiogroup" accessibilityLabel={label}>
+      <View
+        style={[styles.segments, { borderColor: colors.border }]}
+        accessibilityRole="radiogroup"
+        accessibilityLabel={label}>
         {options.map((option) => {
           const selected = option.value === value;
           return (
@@ -39,7 +42,11 @@ export function SegmentedRow<T extends string>({
               style={[styles.segment, selected && { backgroundColor: colors.accent }]}>
               <AuraText
                 numberOfLines={1}
-                style={{ fontSize: 13, fontWeight: selected ? '700' : '500', color: selected ? '#FFFFFF' : colors.text }}>
+                style={{
+                  fontSize: 13,
+                  fontWeight: selected ? '700' : '500',
+                  color: selected ? '#FFFFFF' : colors.text,
+                }}>
                 {option.label}
               </AuraText>
             </Pressable>
@@ -52,5 +59,12 @@ export function SegmentedRow<T extends string>({
 
 const styles = StyleSheet.create({
   segments: { flexDirection: 'row', borderWidth: 1, borderRadius: 14, padding: 3, gap: 3 },
-  segment: { flex: 1, minHeight: 38, borderRadius: 11, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  segment: {
+    flex: 1,
+    minHeight: 38,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
 });

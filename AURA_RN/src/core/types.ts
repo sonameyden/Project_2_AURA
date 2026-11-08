@@ -46,26 +46,12 @@ export type AtmosphereProfile = {
   emotion: string;
   energy: number;
   valence: number;
-  environment:
-    | 'Heaven'
-    | 'Nature'
-    | 'Ocean'
-    | 'Dream'
-    | 'Romantic'
-    | 'Melancholic'
-    | 'Hopeful'
-    | 'Energetic';
+  environment: 'Heaven' | 'Nature' | 'Ocean' | 'Dream' | 'Romantic' | 'Melancholic' | 'Hopeful' | 'Energetic';
   primaryColorHex: string;
   secondaryColorHexes: string[];
   lightingStyle: 'Soft' | 'Bright' | 'Dramatic' | 'Fading';
   particleStyle: 'Dust' | 'Rain' | 'Bubbles' | 'Petals' | 'Stars' | 'Sparks' | 'None';
-  kaleidoscopeStyle:
-    | 'SoftOrganic'
-    | 'FluidSymmetry'
-    | 'WaveLike'
-    | 'SharpGeometric'
-    | 'DarkReflective'
-    | 'Floral';
+  kaleidoscopeStyle: 'SoftOrganic' | 'FluidSymmetry' | 'WaveLike' | 'SharpGeometric' | 'DarkReflective' | 'Floral';
   catBehavior: 'Idle' | 'Sleeping' | 'Walking' | 'Stretching' | 'Playing' | 'Running' | 'Watching';
   transitionStyle: 'Gentle' | 'Progressive' | 'Sharp';
   resonantLyricLineIds: string[];

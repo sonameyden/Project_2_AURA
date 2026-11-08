@@ -81,7 +81,9 @@ export function LyricsOverlay({
   }, [reducedMotion, scale, shownLine?.id, shownLine?.resonant]);
 
   return (
-    <View style={{ minHeight: 50 * fontScale, alignItems: 'center', justifyContent: 'center' }} accessibilityLiveRegion="polite">
+    <View
+      style={{ minHeight: 50 * fontScale, alignItems: 'center', justifyContent: 'center' }}
+      accessibilityLiveRegion="polite">
       {shownLine ? (
         <Animated.Text
           numberOfLines={3}

@@ -1,8 +1,6 @@
 const defaultApiUrl = 'https://aura-backend.sonameydenaura.workers.dev';
 
-export const apiBaseUrl = (
-  process.env.EXPO_PUBLIC_API_URL?.trim() || defaultApiUrl
-).replace(/\/+$/, '');
+export const apiBaseUrl = (process.env.EXPO_PUBLIC_API_URL?.trim() || defaultApiUrl).replace(/\/+$/, '');
 
 export const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY?.trim() ?? '',
