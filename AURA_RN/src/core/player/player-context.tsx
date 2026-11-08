@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 
 import { auraApi } from '../api';
 import { useAuth } from '../auth-context';
+import { isExpoGo } from '../runtime';
 import type { AtmosphereProfile, LyricLine, Song } from '../types';
 import {
   indexAfterTrackEnds,
@@ -110,6 +111,8 @@ export function PlayerProvider({ children, crossfadeSeconds = 0 }: { children: R
 }
 
 const FADE_STEP_MS = 50;
+/** A skip fades the old song out this quickly so it doesn't cut off abruptly. */
+const SKIP_FADE_SECONDS = 0.3;
 
 function ActivePlayerProvider({ children, crossfadeSeconds }: { children: React.ReactNode } & PlayerOptions) {
   // Two players so one song can fade out while the next fades in.
@@ -117,7 +120,14 @@ function ActivePlayerProvider({ children, crossfadeSeconds }: { children: React.
   const playerB = useAudioPlayer(null, { updateInterval: 250 });
   const statusA = useAudioPlayerStatus(playerA);
   const statusB = useAudioPlayerStatus(playerB);
-  const [activeSlot, setActiveSlot] = useState<0 | 1>(0);
+  const [activeSlot, setActiveSlotState] = useState<0 | 1>(0);
+  // Mirrors `activeSlot` so rapid skips (before React re-renders) still stop the
+  // player that is really audible instead of leaving it playing underneath.
+  const activeSlotRef = useRef<0 | 1>(0);
+  const setActiveSlot = useCallback((slot: 0 | 1) => {
+    activeSlotRef.current = slot;
+    setActiveSlotState(slot);
+  }, []);
   const players = useMemo(() => [playerA, playerB] as const, [playerA, playerB]);
   const player = players[activeSlot];
   const status = activeSlot === 0 ? statusA : statusB;
@@ -143,7 +153,8 @@ function ActivePlayerProvider({ children, crossfadeSeconds }: { children: React.
   useEffect(() => {
     setAudioModeAsync({
       playsInSilentMode: true,
-      shouldPlayInBackground: true,
+      // Background playback needs the expo-audio config plugin, which Expo Go doesn't apply.
+      shouldPlayInBackground: !isExpoGo,
       interruptionMode: 'doNotMix',
       allowsRecording: false,
       shouldRouteThroughEarpiece: false,
@@ -158,12 +169,12 @@ function ActivePlayerProvider({ children, crossfadeSeconds }: { children: React.
     fadeTimer.current = null;
   }, []);
 
-  /** Loads `nextQueue[nextIndex]`, optionally crossfading from the current song. */
+  /** Loads `nextQueue[nextIndex]`, fading over `fadeSeconds` from the current song if it is playing. */
   const startTrack = useCallback(
     async (
       nextQueue: Song[],
       nextIndex: number,
-      { atmosphereOverride = null, crossfade = false }: { atmosphereOverride?: AtmosphereProfile | null; crossfade?: boolean } = {},
+      { atmosphereOverride = null, fadeSeconds: requestedFade = 0 }: { atmosphereOverride?: AtmosphereProfile | null; fadeSeconds?: number } = {},
     ) => {
       const nextSong = nextQueue[nextIndex];
       if (!nextSong) return;
@@ -182,9 +193,10 @@ function ActivePlayerProvider({ children, crossfadeSeconds }: { children: React.
       }
 
       finishFade();
-      const current = players[activeSlot];
-      const other = players[activeSlot === 0 ? 1 : 0];
-      const fadeSeconds = crossfade && current.playing ? crossfadeSeconds : 0;
+      const slot = activeSlotRef.current;
+      const current = players[slot];
+      const other = players[slot === 0 ? 1 : 0];
+      const fadeSeconds = current.playing ? requestedFade : 0;
       const target: AudioPlayer = fadeSeconds > 0 ? other : current;
 
       try {
@@ -192,7 +204,7 @@ function ActivePlayerProvider({ children, crossfadeSeconds }: { children: React.
           setVolume(target, 0);
           target.replace(nextSong.streamUrl);
           target.play();
-          setActiveSlot(activeSlot === 0 ? 1 : 0);
+          setActiveSlot(slot === 0 ? 1 : 0);
           const steps = Math.max(1, Math.round((fadeSeconds * 1000) / FADE_STEP_MS));
           let step = 0;
           fadeTimer.current = setInterval(() => {
@@ -213,25 +225,27 @@ function ActivePlayerProvider({ children, crossfadeSeconds }: { children: React.
           target.replace(nextSong.streamUrl);
           target.play();
         }
-        if (target !== current) {
+        // Lock screen controls are optional: skipped in Expo Go, and ignored
+        // on platforms that don't support them.
+        if (!isExpoGo) {
           try {
-            current.setActiveForLockScreen(false);
+            if (target !== current) current.setActiveForLockScreen(false);
+            target.setActiveForLockScreen(
+              true,
+              {
+                title: nextSong.title,
+                artist: nextSong.artistName,
+                albumTitle: undefined,
+                artworkUrl: nextSong.artworkUrl ?? undefined,
+              },
+              // expo-audio does not yet emit next/previous events back to JS, so
+              // only show controls that work.
+              { showNextTrack: false, showPreviousTrack: false },
+            );
           } catch {
-            // Lock screen controls are optional; ignore platforms without them.
+            // Playback itself is unaffected.
           }
         }
-        target.setActiveForLockScreen(
-          true,
-          {
-            title: nextSong.title,
-            artist: nextSong.artistName,
-            albumTitle: undefined,
-            artworkUrl: nextSong.artworkUrl ?? undefined,
-          },
-          // expo-audio does not yet emit next/previous events back to JS, so
-          // only show controls that work.
-          { showNextTrack: false, showPreviousTrack: false },
-        );
       } catch (playbackError) {
         setError(errorMessage(playbackError));
       }
@@ -259,31 +273,33 @@ function ActivePlayerProvider({ children, crossfadeSeconds }: { children: React.
         setError(errorMessage(requestError));
       }
     },
-    [activeSlot, crossfadeSeconds, finishFade, getToken, players, queryClient],
+    [finishFade, getToken, players, queryClient, setActiveSlot],
   );
 
   const playSong = useCallback(
     async (nextSong: Song, nextQueue?: Song[], atmosphereOverride?: AtmosphereProfile | null) => {
       const base = nextQueue?.length ? nextQueue : [nextSong];
       const chosen = Math.max(0, base.findIndex((item) => item.id === nextSong.id));
+      // Songs the user picks or skips to get a quick fade, not the full crossfade;
+      // that is only for a song that reaches its end by itself (see the early-advance effect).
       if (unshuffledQueue) {
         setUnshuffledQueue(base);
-        await startTrack(shuffleKeepingCurrent(base, chosen), 0, { atmosphereOverride, crossfade: true });
+        await startTrack(shuffleKeepingCurrent(base, chosen), 0, { atmosphereOverride, fadeSeconds: SKIP_FADE_SECONDS });
       } else {
-        await startTrack(base, chosen, { atmosphereOverride, crossfade: true });
+        await startTrack(base, chosen, { atmosphereOverride, fadeSeconds: SKIP_FADE_SECONDS });
       }
     },
     [startTrack, unshuffledQueue],
   );
 
   const playQueueIndex = useCallback(
-    (index: number) => startTrack(queue, index, { crossfade: true }),
+    (index: number) => startTrack(queue, index, { fadeSeconds: SKIP_FADE_SECONDS }),
     [queue, startTrack],
   );
 
   const playNext = useCallback(async () => {
     const next = nextQueueIndex(queueIndex, queue.length, repeatMode);
-    if (next !== null) await startTrack(queue, next, { crossfade: true });
+    if (next !== null) await startTrack(queue, next, { fadeSeconds: SKIP_FADE_SECONDS });
   }, [queue, queueIndex, repeatMode, startTrack]);
 
   const playPrevious = useCallback(async () => {
@@ -292,7 +308,7 @@ function ActivePlayerProvider({ children, crossfadeSeconds }: { children: React.
       await player.seekTo(0);
       return;
     }
-    await startTrack(queue, previous, { crossfade: true });
+    await startTrack(queue, previous, { fadeSeconds: SKIP_FADE_SECONDS });
   }, [player, queue, queueIndex, repeatMode, startTrack, status.currentTime]);
 
   // A song that reaches its natural end moves the queue on (or repeats).
@@ -318,7 +334,7 @@ function ActivePlayerProvider({ children, crossfadeSeconds }: { children: React.
     const next = nextQueueIndex(queueIndex, queue.length, repeatMode);
     if (next === null) return;
     earlyAdvanceFor.current = loadId;
-    void startTrack(queue, next, { crossfade: true });
+    void startTrack(queue, next, { fadeSeconds: crossfadeSeconds });
   }, [crossfadeSeconds, loadId, queue, queueIndex, repeatMode, startTrack, status.currentTime, status.duration, status.playing]);
 
   const toggleShuffle = useCallback(() => {

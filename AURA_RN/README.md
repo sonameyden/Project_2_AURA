@@ -8,24 +8,19 @@ Cross-platform React Native app for AURA, built with Expo, TypeScript, and Expo 
 2. From this folder, install dependencies with `npm ci`.
 3. Copy `.env.example` to `.env`. In Firebase Console, open **Project settings → General → Your apps** and copy the config values for the Firebase Web app into the matching `EXPO_PUBLIC_FIREBASE_*` entries. If there is no Web app yet, register one first. The backend URL defaults to the deployed URL used by the Kotlin app; override `EXPO_PUBLIC_API_URL` if your deployment differs.
 4. Enable Email/Password sign-in in Firebase Authentication and ensure `EXPO_PUBLIC_FIREBASE_PROJECT_ID` matches the backend's `FIREBASE_PROJECT_ID`.
-5. To use the app in a standard Expo Go session, run `npx expo start --go`. Native-only features such as Rive and background audio are not available in Expo Go. For the full app on Android without installing Android Studio, create a custom development build with EAS:
+5. Install **Expo Go** on your Android phone (Play Store) or iPhone (App Store), then run:
 
    ```sh
-   npm install --global eas-cli
-   eas login
-   eas init
-   eas build --platform android --profile development
+   npm start
    ```
 
-   Install the generated APK on your phone. Before building, add `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_FIREBASE_API_KEY`, `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN`, `EXPO_PUBLIC_FIREBASE_PROJECT_ID`, and `EXPO_PUBLIC_FIREBASE_APP_ID` to the Expo project's **development** environment at [expo.dev](https://expo.dev). Local `.env` files are not uploaded to EAS Build. These `EXPO_PUBLIC_*` values are included in the client bundle; do not put server secrets in them.
+   Scan the QR code with the phone's camera (iOS) or the Expo Go app (Android). The phone and PC must be on the same Wi-Fi network; if they can't reach each other, run `npx expo start --go --tunnel`. `npm run web` starts the web build.
 
-   After installing the development build, start the bundler with `npx expo start --dev-client --tunnel` and open AURA's development app (not Expo Go). The build uses the `development` profile in `eas.json` and produces an installable APK.
-
-   Alternatively, with Android Studio and a local Android toolchain installed, run `npx expo run:android`. iOS native builds require macOS. `npm run web` starts the web build.
+The app only uses native modules that ship inside Expo Go, so no native build is needed for development on Android or iOS. Background playback and lock screen media controls depend on the `expo-audio` config plugin, which Expo Go doesn't apply; they are skipped in Expo Go (`src/core/runtime.ts`) and work in a development or production build (`eas build`, or `npx expo run:android` with a local Android toolchain; iOS native builds require macOS). For those builds, add the `EXPO_PUBLIC_*` values to the Expo project's environment at [expo.dev](https://expo.dev), since local `.env` files are not uploaded to EAS Build.
 
 `EXPO_PUBLIC_*` values are bundled into the client. Firebase client configuration is not a server secret; restrict its API key in Google Cloud. Never put OpenAI, Supabase service-role, Genius, or other server credentials in this app. Requests use the signed-in Firebase user's bearer token; the old Android dev-secret header is intentionally not copied. Native Firebase Auth persistence uses `expo-secure-store`; theme preferences use AsyncStorage.
 
-Background playback is enabled by the `expo-audio` config plugin. The Kotlin login animation is bundled under `assets/rive/` and rendered with Rive on native platforms. Rive and background audio require a development/production native build (`npx expo run:android`, EAS Build, or an iOS build on macOS); Expo Go does not include these native modules/config changes. `expo-dev-client` is installed to support the custom development app.
+`expo-dev-client` stays installed so custom development builds keep working; `npm start` uses `--go` to open in Expo Go by default.
 
 ## Architecture
 
@@ -49,7 +44,7 @@ src/
 
 The app implements the existing `/catalog`, `/atmosphere`, `/lyrics`, and `/library` routes, including search, mood discovery, profile updates, favorites, listening history, playlists, artist following, albums, and creator uploads. The Worker CORS allow-list includes the HTTP methods used by the browser build; native requests do not use browser CORS.
 
-The Kotlin app's login and sign-up background animation is bundled at `assets/rive/auth-background.riv`. The Kotlin Now Playing environments are procedural Compose visuals, and the other environment `.riv` files mentioned in Kotlin source are not present in the assets folder. The React Native cat companion and atmosphere scene currently use native UI primitives. Artist uploads require a track duration (in seconds) because the Worker requires `durationMs`; audio is capped at the backend's 50 MB limit.
+The Kotlin app's Rive login animation is replaced by a gradient background so the app runs in Expo Go. The Kotlin Now Playing environments are procedural Compose visuals. The React Native cat companion and atmosphere scene currently use native UI primitives. Artist uploads require a track duration (in seconds) because the Worker requires `durationMs`; audio is capped at the backend's 50 MB limit.
 
 ## Validation
 

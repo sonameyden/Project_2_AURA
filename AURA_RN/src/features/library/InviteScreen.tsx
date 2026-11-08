@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View } from 'react-native';
 
-import { ActionButton, Artwork, AuraText, Card, ErrorMessage, Heading, LoadingState, Page } from '@/components/ui';
+import { BackButton, ActionButton, Artwork, AuraText, Card, ErrorMessage, Heading, LoadingState, Page } from '@/components/ui';
 import { auraApi } from '@/core/api';
 import { useAuth } from '@/core/auth-context';
 import { useAuraTheme } from '@/core/theme';
@@ -30,6 +30,7 @@ export default function InviteScreenFeature() {
 
   return (
     <Page>
+      <BackButton variant="close" />
       <Heading title="Playlist invite" />
       {preview.isPending ? <LoadingState label="Opening invite…" /> : null}
       {loadError ? <ErrorMessage message={loadError} onRetry={() => void preview.refetch()} /> : null}

@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
-import { ActionButton, AuraText, Card, EmptyState, ErrorMessage, Field, Heading, LoadingState, Page } from '@/components/ui';
+import { BackButton, ActionButton, AuraText, Card, EmptyState, ErrorMessage, Field, Heading, LoadingState, Page, useToast, showAlert } from '@/components/ui';
 import { useAuraTheme } from '@/core/theme';
 import type { PlaylistSummary } from '@/core/types';
 
@@ -13,6 +13,7 @@ export default function PlaylistsScreenFeature() {
   const router = useRouter();
   const { colors } = useAuraTheme();
   const playlistsQuery = usePlaylists();
+  const toast = useToast();
   const createPlaylist = useCreatePlaylist();
   const deletePlaylist = useDeletePlaylist();
   const playlists = playlistsQuery.data ?? [];
@@ -22,14 +23,19 @@ export default function PlaylistsScreenFeature() {
 
   const create = () => {
     if (!title.trim()) {
-      Alert.alert('Name your playlist', 'Enter a title before creating the playlist.');
+      toast.show({ title: 'Name your playlist', message: 'Enter a title before creating it.', variant: 'error' });
       return;
     }
-    createPlaylist.mutate(title.trim(), { onSuccess: () => setTitle('') });
+    createPlaylist.mutate(title.trim(), {
+      onSuccess: (created) => {
+        setTitle('');
+        toast.show({ title: `Created ${created.title}` });
+      },
+    });
   };
 
   const confirmDelete = (playlist: PlaylistSummary) =>
-    Alert.alert('Delete playlist?', `"${playlist.title}" will be removed. Songs stay in the catalog.`, [
+    showAlert('Delete playlist?', `"${playlist.title}" will be removed. Songs stay in the catalog.`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -37,13 +43,14 @@ export default function PlaylistsScreenFeature() {
         onPress: () =>
           deletePlaylist.mutate(playlist.id, {
             onError: (error) =>
-              Alert.alert('Could not delete playlist', error instanceof Error ? error.message : 'Please try again.'),
+              showAlert('Could not delete playlist', error instanceof Error ? error.message : 'Please try again.'),
           }),
       },
     ]);
 
   return (
     <Page>
+      <BackButton />
       <Heading title="Playlists" subtitle="Gather songs around a feeling, a moment, or a place." />
       <Card>
         <AuraText style={{ fontSize: 17, fontWeight: '800' }}>Create a playlist</AuraText>

@@ -1,15 +1,14 @@
-import { Link, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { Link } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ActionButton, AuraText, Field, Page } from '@/components/ui';
 import { useAuth } from '@/core/auth-context';
 import { useAuraTheme } from '@/core/theme';
 
-import { RiveBackground } from './components/RiveBackground';
+import { useAuthBackdrop } from './components/AuthBackground';
 
 export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
-  const router = useRouter();
   const { colors } = useAuraTheme();
   const { configurationReady, login, signup } = useAuth();
   const [email, setEmail] = useState('');
@@ -17,6 +16,17 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [working, setWorking] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // The aurora behind login and sign-up is shared (see app/(auth)/_layout.tsx):
+  // each keystroke makes it glow, and it breathes while signing in.
+  const backdrop = useAuthBackdrop();
+  const typed = (setValue: (value: string) => void) => (value: string) => {
+    setValue(value);
+    backdrop.pulse();
+  };
+  useEffect(() => {
+    backdrop.setBusy(working);
+  }, [backdrop, working]);
 
   const submit = async () => {
     setFormError(null);
@@ -32,7 +42,8 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
     try {
       if (signUp) await signup(email, password);
       else await login(email, password);
-      router.replace('/(tabs)');
+      // No navigation here: the root layout moves signed-in users to Home (or a pending
+      // invite) as soon as the account changes. Navigating here too made two transitions.
     } catch (error) {
       setFormError(messageFor(error));
     } finally {
@@ -41,8 +52,7 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <RiveBackground />
+    <View style={{ flex: 1 }}>
       <View
         pointerEvents="none"
         style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(12,13,18,0.22)' }]}
@@ -83,7 +93,7 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
             <Field
               label="Email"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={typed(setEmail)}
               placeholder="Email"
               autoCapitalize="none"
               autoComplete="email"
@@ -94,7 +104,7 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
             <Field
               label="Password"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={typed(setPassword)}
               placeholder="Password"
               secureTextEntry
               autoComplete={signUp ? 'new-password' : 'current-password'}
@@ -105,7 +115,7 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
               <Field
                 label="Confirm Password"
                 value={confirmPassword}
-                onChangeText={setConfirmPassword}
+                onChangeText={typed(setConfirmPassword)}
                 placeholder="Confirm Password"
                 secureTextEntry
                 textContentType="newPassword"
@@ -136,7 +146,8 @@ export function AuthScreen({ signUp = false }: { signUp?: boolean }) {
           </View>
         </View>
         <View style={{ alignItems: 'center', paddingVertical: 8 }}>
-          <Link href={signUp ? '/login' : '/signup'} asChild>
+          {/* Replace rather than push, so switching back and forth doesn't stack screens. */}
+          <Link href={signUp ? '/login' : '/signup'} replace asChild>
             <Pressable accessibilityRole="button">
               <AuraText style={{ color: '#FFFFFF', fontWeight: '600' }}>
                 {signUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}

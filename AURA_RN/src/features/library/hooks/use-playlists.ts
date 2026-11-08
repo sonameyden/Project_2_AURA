@@ -4,8 +4,10 @@ import { useCallback, useState } from 'react';
 
 import { auraApi } from '@/core/api';
 import { useAuth } from '@/core/auth-context';
-import type { PlaylistDetail } from '@/core/types';
+import type { PlaylistDetail, PlaylistSummary, Song } from '@/core/types';
 import { useAuraQuery } from '@/core/use-aura-query';
+
+import { toSummary, withAddedSong } from '../lib/playlist-cache';
 
 /** How often an open playlist checks for collaborators' changes. */
 export const LIVE_REFRESH_MS = 3000;
@@ -52,64 +54,119 @@ export function usePlaylistDetail(id: string | undefined) {
   );
 }
 
+type CacheWriter<TVariables, TResult> = (cache: PlaylistCache, result: TResult, variables: TVariables) => void;
+
+/** Reads and writes the cached playlist list and playlist details for the signed-in user. */
+type PlaylistCache = {
+  /** Applies `change` to the cached playlist list, if it has been loaded. */
+  updateList: (change: (list: PlaylistSummary[]) => PlaylistSummary[]) => void;
+  /** Applies `change` to one cached playlist detail, if it has been loaded. */
+  updateDetail: (playlistId: string, change: (detail: PlaylistDetail) => PlaylistDetail) => void;
+  setDetail: (detail: PlaylistDetail) => void;
+  removeDetail: (playlistId: string) => void;
+};
+
+/** Replaces one playlist's row in the cached list with the server's newer copy. */
+const replaceInList = (cache: PlaylistCache, playlist: PlaylistSummary | PlaylistDetail) =>
+  cache.updateList((list) => list.map((item) => (item.id === playlist.id ? { ...item, ...toSummary(playlist) } : item)));
+
+/**
+ * Runs a playlist change, then writes the server's answer straight into the
+ * cache so every screen shows it immediately. A background refetch follows to
+ * pick up anything else (e.g. collaborators' edits); it is not awaited, so the
+ * caller isn't kept waiting on a second round trip.
+ */
 function usePlaylistMutation<TVariables, TResult>(
   mutate: (token: string, variables: TVariables) => Promise<TResult>,
-  playlistIdOf?: (variables: TVariables) => string,
+  {
+    playlistIdOf,
+    writeCache,
+  }: { playlistIdOf?: (variables: TVariables) => string; writeCache?: CacheWriter<TVariables, TResult> } = {},
 ) {
   const { getToken, user } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (variables: TVariables) => mutate(await getToken(), variables),
-    onSuccess: async (result, variables) => {
-      // Endpoints that return the full detail update the open screen immediately.
-      if (playlistIdOf && result && typeof result === 'object' && 'songs' in result) {
-        queryClient.setQueryData(['library', 'playlist', playlistIdOf(variables), user?.uid], result);
-      }
-      await queryClient.invalidateQueries({ queryKey: ['library', 'playlists'] });
-      if (playlistIdOf) {
-        await queryClient.invalidateQueries({ queryKey: ['library', 'playlist', playlistIdOf(variables)] });
-      }
+    onSuccess: (result, variables) => {
+      const uid = user?.uid;
+      const detailKey = (playlistId: string) => ['library', 'playlist', playlistId, uid];
+      const cache: PlaylistCache = {
+        updateList: (change) =>
+          queryClient.setQueryData<PlaylistSummary[]>(['library', 'playlists', uid], (list) => (list ? change(list) : list)),
+        updateDetail: (playlistId, change) =>
+          queryClient.setQueryData<PlaylistDetail>(detailKey(playlistId), (detail) => (detail ? change(detail) : detail)),
+        setDetail: (detail) => queryClient.setQueryData(detailKey(detail.id), detail),
+        removeDetail: (playlistId) => queryClient.removeQueries({ queryKey: ['library', 'playlist', playlistId] }),
+      };
+      writeCache?.(cache, result, variables);
+
+      void queryClient.invalidateQueries({ queryKey: ['library', 'playlists'] });
+      if (playlistIdOf) void queryClient.invalidateQueries({ queryKey: ['library', 'playlist', playlistIdOf(variables)] });
     },
   });
 }
 
-export const useCreatePlaylist = () => usePlaylistMutation((token, title: string) => auraApi.createPlaylist(token, title));
+/** Endpoints that answer with the full playlist detail. */
+const writeDetail = (cache: PlaylistCache, detail: PlaylistDetail) => {
+  if (!detail || !Array.isArray(detail.songs)) return;
+  cache.setDetail(detail);
+  replaceInList(cache, detail);
+};
+
+export const useCreatePlaylist = () =>
+  usePlaylistMutation((token, title: string) => auraApi.createPlaylist(token, title), {
+    writeCache: (cache, created) => cache.updateList((list) => [created, ...list.filter((item) => item.id !== created.id)]),
+  });
 
 export const useDeletePlaylist = () =>
-  usePlaylistMutation((token, playlistId: string) => auraApi.deletePlaylist(token, playlistId));
+  usePlaylistMutation((token, playlistId: string) => auraApi.deletePlaylist(token, playlistId), {
+    writeCache: (cache, _result, playlistId) => {
+      cache.updateList((list) => list.filter((item) => item.id !== playlistId));
+      cache.removeDetail(playlistId);
+    },
+  });
 
 export const useAddSongToPlaylist = () =>
   usePlaylistMutation(
-    (token, { playlistId, songId }: { playlistId: string; songId: string }) => auraApi.addSongToPlaylist(token, playlistId, songId),
-    ({ playlistId }) => playlistId,
+    (token, { playlistId, song }: { playlistId: string; song: Song }) =>
+      auraApi.addSongToPlaylist(token, playlistId, song.id),
+    {
+      playlistIdOf: ({ playlistId }) => playlistId,
+      // The server answers with the playlist's new song order (no song objects),
+      // so the open playlist is rebuilt from the songs it already has plus this one.
+      writeCache: (cache, saved, { playlistId, song }) => {
+        replaceInList(cache, saved);
+        cache.updateDetail(playlistId, (detail) => withAddedSong(detail, saved, song));
+      },
+    },
   );
 
 export const useRemoveSongFromPlaylist = () =>
   usePlaylistMutation(
     (token, { playlistId, songId }: { playlistId: string; songId: string }) =>
       auraApi.removeSongFromPlaylist(token, playlistId, songId),
-    ({ playlistId }) => playlistId,
+    { playlistIdOf: ({ playlistId }) => playlistId, writeCache: (cache, detail) => writeDetail(cache, detail) },
   );
 
 export const useUpdatePlaylist = () =>
   usePlaylistMutation(
     (token, { playlistId, ...changes }: { playlistId: string; title?: string; isPublic?: boolean }) =>
       auraApi.updatePlaylist(token, playlistId, changes),
-    ({ playlistId }) => playlistId,
+    { playlistIdOf: ({ playlistId }) => playlistId, writeCache: (cache, detail) => writeDetail(cache, detail) },
   );
 
 export const useCollaboratorRole = () =>
   usePlaylistMutation(
     (token, { playlistId, userId, role }: { playlistId: string; userId: string; role: 'viewer' | 'editor' }) =>
       auraApi.updateCollaborator(token, playlistId, userId, role),
-    ({ playlistId }) => playlistId,
+    { playlistIdOf: ({ playlistId }) => playlistId, writeCache: (cache, detail) => writeDetail(cache, detail) },
   );
 
 export const useRemoveCollaborator = () =>
   usePlaylistMutation(
     (token, { playlistId, userId }: { playlistId: string; userId: string }) =>
       auraApi.removeCollaborator(token, playlistId, userId),
-    ({ playlistId }) => playlistId,
+    { playlistIdOf: ({ playlistId }) => playlistId },
   );
 
 /** Moves a song with an optimistic update; the server merges with others' edits. */

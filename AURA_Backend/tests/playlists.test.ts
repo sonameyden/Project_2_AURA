@@ -75,6 +75,38 @@ describe("playlist authorisation", () => {
     await updatePlaylistAtomically(db, "private", (current) => ({ song_ids: appendUnique(current.song_ids, ["c"]) }));
     expect(tables.playlists[0]).toMatchObject({ song_ids: ["a", "b", "c"], version: 1 });
   });
+
+  it("reuses the row from the access check, but reloads it if someone saved in between", async () => {
+    const tables = playlists();
+    const db = fakeSupabase(tables);
+    // The route loaded the playlist for its access check (version 0)...
+    const loadedForAccessCheck = { ...tables.playlists[0] };
+    // ...then a collaborator added "x" before our write landed.
+    Object.assign(tables.playlists[0], { song_ids: ["a", "b", "x"], version: 1 });
+
+    await updatePlaylistAtomically(
+      db,
+      "private",
+      (current) => ({ song_ids: appendUnique(current.song_ids, ["c"]) }),
+      4,
+      loadedForAccessCheck,
+    );
+    // The stale copy's version no longer matches, so the change is re-applied on the fresh row.
+    expect(tables.playlists[0]).toMatchObject({ song_ids: ["a", "b", "x", "c"], version: 2 });
+  });
+
+  it("writes straight away when the reused row is still current", async () => {
+    const tables = playlists();
+    const db = fakeSupabase(tables);
+    await updatePlaylistAtomically(
+      db,
+      "private",
+      (current) => ({ song_ids: appendUnique(current.song_ids, ["c"]) }),
+      4,
+      { ...tables.playlists[0] },
+    );
+    expect(tables.playlists[0]).toMatchObject({ song_ids: ["a", "b", "c"], version: 1 });
+  });
 });
 
 describe("concurrent playlist edits", () => {

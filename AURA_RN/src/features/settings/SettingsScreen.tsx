@@ -2,12 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
-import { ActionButton, AuraText, Card, ErrorMessage, Heading, Page, SegmentedRow, SwitchRow } from '@/components/ui';
+import { ActionButton, AuraText, Card, ErrorMessage, Heading, Page, SegmentedRow, SwitchRow, showAlert } from '@/components/ui';
 import { auraApi } from '@/core/api';
 import { useAuth } from '@/core/auth-context';
-import { useSettings, type AppSettings, type TextSize, type VisualIntensity } from '@/core/settings';
+import { useSettings, type AppSettings, type CrossfadeLength, type TextSize, type VisualIntensity } from '@/core/settings';
 import { useAuraTheme } from '@/core/theme';
 import { useUserProfile } from '@/hooks/use-user-profile';
 
@@ -26,6 +26,13 @@ const textSizeOptions: { value: TextSize; label: string }[] = [
   { value: 'extraLarge', label: 'X-Large' },
 ];
 
+const crossfadeOptions: { value: CrossfadeLength; label: string }[] = [
+  { value: 'off', label: 'Off' },
+  { value: '3', label: '3s' },
+  { value: '5', label: '5s' },
+  { value: '8', label: '8s' },
+];
+
 export default function SettingsScreenFeature() {
   const router = useRouter();
   const { colors, mode, setMode } = useAuraTheme();
@@ -36,12 +43,12 @@ export default function SettingsScreenFeature() {
 
   const save = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     void update(key, value).catch((error: unknown) =>
-      Alert.alert('Could not save setting', error instanceof Error ? error.message : 'Please try again.'),
+      showAlert('Could not save setting', error instanceof Error ? error.message : 'Please try again.'),
     );
   };
 
   const deleteAccount = () =>
-    Alert.alert(
+    showAlert(
       'Delete your account?',
       'This permanently removes your AURA account and library. This cannot be undone.',
       [
@@ -55,7 +62,7 @@ export default function SettingsScreenFeature() {
               .then((token) => auraApi.deleteAccount(token))
               .then(() => logout())
               .catch((error: unknown) =>
-                Alert.alert('Could not delete account', error instanceof Error ? error.message : 'Please try again.'),
+                showAlert('Could not delete account', error instanceof Error ? error.message : 'Please try again.'),
               )
               .finally(() => setWorking(false));
           },
@@ -107,7 +114,7 @@ export default function SettingsScreenFeature() {
           value={mode === 'dark'}
           onChange={(enabled) => {
             void setMode(enabled ? 'dark' : 'light').catch((error: unknown) =>
-              Alert.alert('Could not update appearance', error instanceof Error ? error.message : 'Please try again.'),
+              showAlert('Could not update appearance', error instanceof Error ? error.message : 'Please try again.'),
             );
           }}
         />
@@ -147,10 +154,11 @@ export default function SettingsScreenFeature() {
       </SettingsSection>
 
       <SettingsSection title="Playback" icon="musical-notes">
-        <SwitchRow
+        <SegmentedRow
           label="Crossfade between songs"
-          description="Blend the end of one song into the next, with the visuals morphing too."
+          description="When a song ends, blend it into the next one, with the visuals morphing too. Skipping always switches straight away."
           value={settings.crossfade}
+          options={crossfadeOptions}
           onChange={(value) => save('crossfade', value)}
         />
       </SettingsSection>
@@ -167,7 +175,7 @@ export default function SettingsScreenFeature() {
         variant="danger"
         onPress={() => {
           void logout().catch((error: unknown) =>
-            Alert.alert('Log out failed', error instanceof Error ? error.message : 'Please try again.'),
+            showAlert('Log out failed', error instanceof Error ? error.message : 'Please try again.'),
           );
         }}
       />

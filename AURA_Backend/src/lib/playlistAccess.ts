@@ -89,15 +89,20 @@ export class PlaylistConflictError extends Error {
  * only if nobody else wrote in between (`version` unchanged), retrying a few
  * times. Falls back to a plain write when the `version` column doesn't exist
  * yet. Returns the saved row.
+ *
+ * Pass `initial` when the caller has just loaded the row (e.g. for the access
+ * check) to skip re-reading it on the first attempt; if it is out of date the
+ * version check fails and the row is reloaded as usual.
  */
 export async function updatePlaylistAtomically(
   supabase: SupabaseClient,
   playlistId: string,
   change: (current: PlaylistRow) => Record<string, unknown>,
   attempts = 4,
+  initial?: PlaylistRow,
 ): Promise<PlaylistRow> {
   for (let attempt = 0; attempt < attempts; attempt += 1) {
-    const current = await loadPlaylist(supabase, playlistId);
+    const current = attempt === 0 && initial ? initial : await loadPlaylist(supabase, playlistId);
     if (!current) throw new Error("Playlist not found");
     const patch = change(current);
 

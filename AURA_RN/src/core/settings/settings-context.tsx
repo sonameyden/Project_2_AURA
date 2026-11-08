@@ -4,6 +4,8 @@ import { AccessibilityInfo } from 'react-native';
 
 export type VisualIntensity = 'low' | 'medium' | 'high';
 export type TextSize = 'small' | 'default' | 'large' | 'extraLarge';
+/** How long the end of one song blends into the next. */
+export type CrossfadeLength = 'off' | '3' | '5' | '8';
 
 /** Device-only preferences (proposal §2.2 "Visual intensity and accessibility"). */
 export type AppSettings = {
@@ -12,7 +14,7 @@ export type AppSettings = {
   reducedMotion: boolean;
   textSize: TextSize;
   highContrast: boolean;
-  crossfade: boolean;
+  crossfade: CrossfadeLength;
   showCat: boolean;
 };
 
@@ -21,7 +23,7 @@ export const defaultSettings: AppSettings = {
   reducedMotion: false,
   textSize: 'default',
   highContrast: false,
-  crossfade: true,
+  crossfade: '5',
   showCat: true,
 };
 
@@ -32,8 +34,13 @@ export const textScaleFor: Record<TextSize, number> = {
   extraLarge: 1.3,
 };
 
-/** Seconds of overlap used when crossfade is on. */
-export const CROSSFADE_SECONDS = 5;
+/** Seconds of overlap for each crossfade length. */
+export const crossfadeSecondsFor: Record<CrossfadeLength, number> = {
+  off: 0,
+  '3': 3,
+  '5': 5,
+  '8': 8,
+};
 
 type SettingsContextValue = {
   settings: AppSettings;
@@ -60,7 +67,13 @@ export function parseStored(raw: string | null): Partial<AppSettings> {
     if (typeof stored.textSize === 'string' && stored.textSize in textScaleFor) {
       result.textSize = stored.textSize as TextSize;
     }
-    for (const key of ['reducedMotion', 'highContrast', 'crossfade', 'showCat'] as const) {
+    if (typeof stored.crossfade === 'string' && stored.crossfade in crossfadeSecondsFor) {
+      result.crossfade = stored.crossfade as CrossfadeLength;
+    } else if (typeof stored.crossfade === 'boolean') {
+      // Older versions saved crossfade as on/off; on was 5 seconds.
+      result.crossfade = stored.crossfade ? '5' : 'off';
+    }
+    for (const key of ['reducedMotion', 'highContrast', 'showCat'] as const) {
       if (typeof stored[key] === 'boolean') result[key] = stored[key];
     }
     return result;

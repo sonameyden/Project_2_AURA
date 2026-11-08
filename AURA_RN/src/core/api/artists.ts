@@ -13,7 +13,11 @@ export const artistsApi = {
     request<void>(`catalog/artists/${encode(id)}/follow`, token, { method: follow ? 'POST' : 'DELETE' }),
   isFollowingArtist: (token: string, id: string) =>
     request<{ artistId: string; following: boolean }>(`catalog/artists/${encode(id)}/following`, token),
-  createArtist: (token: string, body: { name: string; bio: string }) =>
+  /**
+   * Creates or updates the signed-in user's artist profile. The backend replaces
+   * the whole row, so an update must resend the current `imageUrl` or the photo is cleared.
+   */
+  createArtist: (token: string, body: { name: string; bio: string | null; imageUrl?: string | null }) =>
     request<Artist>('catalog/artists/me', token, json('POST', body)),
   getMyArtist: (token: string) => request<Artist>('catalog/artists/me', token),
   uploadArtistImage: (token: string, formData: FormData) =>

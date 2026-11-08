@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 
 import {
   AuraText,
@@ -11,6 +11,7 @@ import {
   GradientText,
   Page,
   TrackRow,
+  showAlert,
 } from '@/components/ui';
 import { auraApi } from '@/core/api';
 import { useAuth } from '@/core/auth-context';
@@ -34,7 +35,7 @@ export default function MoodScreenFeature() {
 
   const discover = async () => {
     if (!mood.trim()) {
-      Alert.alert('Describe your mood', 'Write a little about how you feel to get started.');
+      showAlert('Describe your mood', 'Write a little about how you feel to get started.');
       return;
     }
     setWorking(true);
@@ -113,21 +114,27 @@ export default function MoodScreenFeature() {
         }}
       />
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2, marginBottom: 20 }}>
+      {/* Clear space below the text box so the suggestions don't crowd into it. */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 10, marginTop: 16, marginBottom: 28 }}>
         {suggestions.map((suggestion) => (
           <Pressable
             key={suggestion}
             onPress={() => setMood(suggestion)}
             accessibilityRole="button"
-            style={{
-              borderRadius: 18,
+            accessibilityLabel={`Use suggestion: ${suggestion}`}
+            style={({ pressed }) => ({
+              minHeight: 38,
+              justifyContent: 'center',
+              borderRadius: 19,
               borderWidth: 1,
               borderColor: colors.border,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
+              paddingHorizontal: 14,
               backgroundColor: colors.surface,
-            }}>
-            <AuraText style={{ color: colors.muted, fontSize: 12 }}>{suggestion}</AuraText>
+              opacity: pressed ? 0.7 : 1,
+            })}>
+            <AuraText numberOfLines={1} style={{ color: colors.muted, fontSize: 13 }}>
+              {suggestion}
+            </AuraText>
           </Pressable>
         ))}
       </View>

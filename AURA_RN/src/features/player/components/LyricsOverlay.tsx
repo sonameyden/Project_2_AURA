@@ -5,7 +5,8 @@ type DisplayedLyric = { id: string; text: string; resonant: boolean };
 
 /**
  * Current lyric line with a fade/slide between lines. Resonant lines (picked by
- * the atmosphere engine for the listener's mood) are larger and gently pulse.
+ * the atmosphere engine for the listener's mood) are larger, bold, glow and
+ * gently pulse. Under reduced motion lines still fade, but don't slide or pulse.
  */
 export function LyricsOverlay({
   lineId,
@@ -25,7 +26,9 @@ export function LyricsOverlay({
   const [opacity] = useState(() => new Animated.Value(0));
   const [translateY] = useState(() => new Animated.Value(10));
   const [scale] = useState(() => new Animated.Value(1));
-  const duration = reducedMotion ? 0 : 200;
+  // Reduced motion keeps the fade (it isn't movement) and drops the slide.
+  const duration = reducedMotion ? 260 : 200;
+  const slide = reducedMotion ? 0 : 10;
 
   useEffect(() => {
     if (shownLineRef.current?.id === lineId) {
@@ -40,7 +43,7 @@ export function LyricsOverlay({
     let active = true;
     const fadeOut = Animated.parallel([
       Animated.timing(opacity, { toValue: 0, duration, useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: reducedMotion ? 0 : -10, duration, useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: -slide, duration, useNativeDriver: true }),
     ]);
     fadeOut.start(({ finished }) => {
       if (!finished || !active) return;
@@ -48,7 +51,7 @@ export function LyricsOverlay({
       shownLineRef.current = nextLine;
       setShownLine(nextLine);
       if (!nextLine) return;
-      translateY.setValue(reducedMotion ? 0 : 10);
+      translateY.setValue(slide);
       Animated.parallel([
         Animated.timing(opacity, { toValue: 1, duration, useNativeDriver: true }),
         Animated.timing(translateY, { toValue: 0, duration, useNativeDriver: true }),
@@ -59,7 +62,7 @@ export function LyricsOverlay({
       active = false;
       fadeOut.stop();
     };
-  }, [duration, lineId, opacity, reducedMotion, resonant, text, translateY]);
+  }, [duration, lineId, opacity, resonant, slide, text, translateY]);
 
   useEffect(() => {
     if (!shownLine?.resonant || reducedMotion) {

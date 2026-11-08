@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import {
+  BackButton,
   ActionButton,
   Artwork,
   AuraText,
@@ -14,12 +14,14 @@ import {
   LoadingState,
   Page,
   TrackRow,
+  showAlert,
 } from '@/components/ui';
 import { auraApi } from '@/core/api';
 import { useAuth } from '@/core/auth-context';
-import { pickImageForm } from '@/core/pick-image';
+import { IMAGE_MAX_SIZE, pickImageForm } from '@/core/pick-image';
 import { usePlayer } from '@/core/player';
 import { useAuraTheme } from '@/core/theme';
+import { useRefreshCatalog } from '@/hooks/use-refresh-catalog';
 import type { Song } from '@/core/types';
 import { useAuraQuery } from '@/core/use-aura-query';
 import { useOpenAddToPlaylist } from '@/hooks/use-open-add-to-playlist';
@@ -27,7 +29,7 @@ import { useOpenAddToPlaylist } from '@/hooks/use-open-add-to-playlist';
 export default function AlbumDetailScreenFeature() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const refreshCatalog = useRefreshCatalog();
   const { colors } = useAuraTheme();
   const { getToken, user } = useAuth();
   const { playSong, togglePlayback, song: playing, isPlaying } = usePlayer();
@@ -57,10 +59,8 @@ export default function AlbumDetailScreenFeature() {
     setMutationError(null);
     try {
       await action(await getToken());
-      await Promise.all([
-        albumQuery.refetch(),
-        queryClient.invalidateQueries({ queryKey: ['catalog', 'my-artist-songs'] }),
-      ]);
+      // This album, the artist page (track counts, artwork) and Home all show it.
+      await refreshCatalog();
     } catch (actionError) {
       setMutationError(actionError instanceof Error ? actionError.message : failure);
     } finally {
@@ -72,12 +72,12 @@ export default function AlbumDetailScreenFeature() {
   const removeSong = (song: Song) =>
     run((token) => auraApi.removeSongFromAlbum(token, id, song.id), 'Song could not be removed.');
   const changeArtwork = async () => {
-    const form = await pickImageForm('artwork', { fallbackName: 'album-artwork.jpg' });
+    const form = await pickImageForm('artwork', { fallbackName: 'album-artwork.jpg', maxSize: IMAGE_MAX_SIZE.artwork });
     if (form) await run((token) => auraApi.updateAlbumArtwork(token, id, form), 'Artwork could not be updated.');
   };
 
   const deleteAlbum = () =>
-    Alert.alert('Delete this album?', 'This removes the album and its songs from your artist profile.', [
+    showAlert('Delete this album?', 'This removes the album and its songs from your artist profile.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete album',
@@ -86,10 +86,10 @@ export default function AlbumDetailScreenFeature() {
           setWorking(true);
           void getToken()
             .then((token) => auraApi.deleteAlbum(token, id))
-            .then(() => queryClient.invalidateQueries({ queryKey: ['catalog'] }))
+            .then(() => refreshCatalog())
             .then(() => router.back())
             .catch((deleteError: unknown) =>
-              Alert.alert('Could not delete album', deleteError instanceof Error ? deleteError.message : 'Please try again.'),
+              showAlert('Could not delete album', deleteError instanceof Error ? deleteError.message : 'Please try again.'),
             )
             .finally(() => setWorking(false));
         },
@@ -106,6 +106,7 @@ export default function AlbumDetailScreenFeature() {
 
   return (
     <Page>
+      <BackButton />
       {error ? <ErrorMessage message={error} onRetry={() => void albumQuery.refetch()} /> : null}
       {albumQuery.isPending ? <LoadingState label="Loading album…" /> : null}
       <View style={{ alignItems: 'center', gap: 12 }}>
@@ -121,7 +122,10 @@ export default function AlbumDetailScreenFeature() {
             </View>
           ) : null}
         </Pressable>
-        <Heading title={album?.title ?? 'Album'} subtitle={`${songs.length} tracks`} />
+        <Heading
+          title={album?.title ?? 'Album'}
+          subtitle={`${isOwner ? 'Your album · ' : ''}${songs.length} ${songs.length === 1 ? 'track' : 'tracks'}`}
+        />
         {songs.length ? (
           <ActionButton
             title={albumIsPlaying ? (isPlaying ? 'Pause' : 'Resume') : 'Play album'}
