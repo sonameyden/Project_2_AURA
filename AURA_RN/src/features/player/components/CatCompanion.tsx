@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   cancelAnimation,
@@ -25,31 +25,31 @@ const poses = {
   playing: require('../../../../assets/images/now-playing/cat_playing.png'),
 };
 
-const walkingFrames = [
-  require('../../../../assets/images/now-playing/cat_walk_1.png'),
-  require('../../../../assets/images/now-playing/cat_walk_2.png'),
-  require('../../../../assets/images/now-playing/cat_walk_3.png'),
-  require('../../../../assets/images/now-playing/cat_walk_4.png'),
-  require('../../../../assets/images/now-playing/cat_walk_5.png'),
-  require('../../../../assets/images/now-playing/cat_walk_6.png'),
-  require('../../../../assets/images/now-playing/cat_walk_7.png'),
-  require('../../../../assets/images/now-playing/cat_walk_8.png'),
+/** Behaviours a tap cycles through (walking/running look like other poses now the cat stays put). */
+const DEMO_ORDER: CatBehavior[] = ['Idle', 'Watching', 'Playing', 'Dancing', 'Sleeping'];
+
+/** A little larger than the Kotlin app's cat (CatCompanion.kt: 140.dp). Shadow and placement scale with it. */
+const CAT_SIZE = 160;
+/** The cat art's feet sit this far down its box (Kotlin draws it at anchor - 0.9 × size). */
+const FEET_Y = CAT_SIZE * 0.9;
+/**
+ * How far the stage tucks under the player controls below it, so the cat
+ * stands on the ground just behind the seek bar, as in the Kotlin app.
+ */
+const TUCK_UNDER_CONTROLS = Math.round(CAT_SIZE * 0.32);
+
+/**
+ * Kotlin's contact shadow (an oval 45% × 12% of the cat at 25% black),
+ * softened: stacked ovals fade towards the edge instead of one hard ellipse.
+ */
+const SHADOW_W = CAT_SIZE * 0.45;
+const SHADOW_H = CAT_SIZE * 0.12;
+const SHADOW_LAYERS = [
+  { w: SHADOW_W * 1.4, h: SHADOW_H * 1.5, alpha: 0.06 },
+  { w: SHADOW_W * 1.12, h: SHADOW_H * 1.15, alpha: 0.08 },
+  { w: SHADOW_W * 0.86, h: SHADOW_H * 0.8, alpha: 0.11 },
+  { w: SHADOW_W * 0.55, h: SHADOW_H * 0.5, alpha: 0.12 },
 ];
-
-const CAT_SIZE = 150;
-const DEMO_ORDER: CatBehavior[] = ['Idle', 'Watching', 'Walking', 'Running', 'Playing', 'Dancing', 'Stretching', 'Sleeping'];
-
-/** Where the cat can stand in each environment image (from CatCompanion.kt). */
-const ANCHORS: Record<AtmosphereProfile['environment'], { y: number; start: number; width: number }> = {
-  Melancholic: { y: 0.72, start: 0.3, width: 0.4 },
-  Nature: { y: 0.7, start: 0.2, width: 0.6 },
-  Ocean: { y: 0.72, start: 0.25, width: 0.5 },
-  Dream: { y: 0.7, start: 0.3, width: 0.4 },
-  Romantic: { y: 0.72, start: 0.25, width: 0.5 },
-  Heaven: { y: 0.74, start: 0.3, width: 0.4 },
-  Hopeful: { y: 0.74, start: 0.25, width: 0.5 },
-  Energetic: { y: 0.72, start: 0.2, width: 0.6 },
-};
 
 /** Colour cast so the cat sits in the scene's light (CatCompanion.kt tint + exposure). */
 const TINTS: Record<AtmosphereProfile['environment'], { color: string; opacity: number; shade: number }> = {
@@ -62,8 +62,6 @@ const TINTS: Record<AtmosphereProfile['environment'], { color: string; opacity: 
   Hopeful: { color: '#FFCCBC', opacity: 0.14, shade: 0 },
   Energetic: { color: '#FFE082', opacity: 0.16, shade: 0 },
 };
-
-const isMoving = (state: CatBehavior) => state === 'Walking' || state === 'Running';
 
 export function CatCompanion({
   behavior,
@@ -79,49 +77,18 @@ export function CatCompanion({
   /** Changes per song; a tapped demo behaviour resets with it. */
   songKey: string;
 }) {
+  // The cat stays in one place, centred on its stage: it reacts to the music
+  // with its pose, breathing and dancing, but never wanders around.
   const { settings } = useSettings();
-  const { width, height } = useWindowDimensions();
   const reduced = settings.reducedMotion;
   const [override, setOverride] = useState<{ key: string; state: CatBehavior } | null>(null);
   const state = override?.key === songKey ? override.state : effectiveCatBehavior(behavior, energy, playing);
-  const anchor = ANCHORS[environment ?? 'Dream'];
   const tint = TINTS[environment ?? 'Dream'];
-  const moving = isMoving(state) && !reduced;
 
-  const [frame, setFrame] = useState(0);
-  const [facingLeft, setFacingLeft] = useState(false);
   const [dancePose, setDancePose] = useState(false);
-  const position = useSharedValue(0.5);
   const breath = useSharedValue(0);
   const sway = useSharedValue(0);
   const hop = useSharedValue(0);
-
-  // Walk-cycle sprite frames; faster for running and for higher energy.
-  useEffect(() => {
-    if (!moving) return;
-    const interval = state === 'Running' ? 85 : Math.max(90, Math.round(140 / (1 + energy)));
-    const timer = setInterval(() => setFrame((current) => (current + 1) % walkingFrames.length), interval);
-    return () => clearInterval(timer);
-  }, [energy, moving, state]);
-
-  // Wander to a new spot every 2–5 seconds while walking or running.
-  useEffect(() => {
-    if (!moving) return;
-    let timer: ReturnType<typeof setTimeout>;
-    const step = () => {
-      const target = 0.15 + Math.random() * 0.7;
-      const distance = Math.abs(target - position.value);
-      const speed = (state === 'Running' ? 0.00055 : 0.00025) * (1 + energy);
-      setFacingLeft(target < position.value);
-      position.value = withTiming(target, { duration: Math.max(500, distance / speed), easing: Easing.linear });
-      timer = setTimeout(step, 2000 + Math.random() * 3000);
-    };
-    step();
-    return () => {
-      clearTimeout(timer);
-      cancelAnimation(position);
-    };
-  }, [energy, moving, position, state]);
 
   // Breathing, playful bob and dance sway; all off under reduced motion.
   useEffect(() => {
@@ -170,36 +137,32 @@ export function CatCompanion({
       transform: [
         { translateY: -bob + (1 - breath.value) * 2 },
         { rotate: `${rotate}deg` },
-        { scaleX: facingLeft && moving ? -1 : 1 },
         { scaleY: 1 + breath.value * breathScale - hop.value * 0.04 },
       ],
     };
   });
 
-  const placement = useAnimatedStyle(() => ({
-    transform: [{ translateX: width * (anchor.start + anchor.width * position.value) - CAT_SIZE / 2 }],
-  }));
-
+  // The shadow tightens and fades as the cat lifts off the ground, and breathes with it.
   const shadowStyle = useAnimatedStyle(() => ({
-    opacity: 0.32 - hop.value * 0.12,
-    transform: [{ scaleX: 1 - hop.value * 0.2 }],
+    opacity: 1 - hop.value * 0.45,
+    transform: [{ scaleX: (1 + breath.value * 0.012) * (1 - hop.value * 0.18) }],
   }));
+  // Kotlin adds a darker contact spot where the paws and tail touch the ground.
+  const pawContact = state === 'Idle' || state === 'Watching';
 
-  const image = moving
-    ? walkingFrames[frame]
-    : state === 'Sleeping'
+  // Walking shows the standing pose and running the playful one, in place.
+  const image =
+    state === 'Sleeping'
       ? poses.sleeping
       : state === 'Watching'
         ? poses.watching
-        : state === 'Playing'
+        : state === 'Playing' || state === 'Running'
           ? poses.playing
           : state === 'Dancing'
             ? dancePose
               ? poses.playing
               : poses.watching
-            : isMoving(state)
-              ? walkingFrames[0]
-              : poses.idle;
+            : poses.idle;
 
   if (!settings.showCat) return null;
 
@@ -208,39 +171,88 @@ export function CatCompanion({
     setOverride({ key: songKey, state: DEMO_ORDER[(index + 1) % DEMO_ORDER.length] });
   };
 
+  // Poses dissolve into each other instead of snapping.
+  const poseTransition = 240;
+
   return (
-    <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
-      <Animated.View
-        pointerEvents="box-none"
-        style={[{ position: 'absolute', left: 0, top: height * anchor.y - CAT_SIZE * 0.9, width: CAT_SIZE, height: CAT_SIZE }, placement]}>
-        <Animated.View style={[styles.shadow, shadowStyle]} />
+    <View
+      pointerEvents="box-none"
+      style={{ height: CAT_SIZE, alignSelf: 'stretch', alignItems: 'center', marginBottom: -TUCK_UNDER_CONTROLS }}>
+      <View pointerEvents="box-none" style={{ width: CAT_SIZE, height: CAT_SIZE }}>
+        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, shadowStyle]}>
+          {SHADOW_LAYERS.map((layer) => (
+            <Oval key={layer.w} width={layer.w} height={layer.h} centerX={CAT_SIZE / 2} centerY={FEET_Y} alpha={layer.alpha} />
+          ))}
+          {pawContact ? (
+            <Oval
+              width={SHADOW_W * 0.22}
+              height={SHADOW_H * 0.6}
+              centerX={CAT_SIZE / 2 - SHADOW_W * 0.3}
+              centerY={FEET_Y}
+              alpha={0.14}
+            />
+          ) : null}
+        </Animated.View>
         <Pressable
           onPress={cycle}
           accessibilityRole="button"
           accessibilityLabel={`Companion cat is ${state.toLowerCase()}. Tap to change what it does.`}
           style={StyleSheet.absoluteFill}>
           <Animated.View style={[StyleSheet.absoluteFill, bodyStyle]}>
-            <Image source={image} contentFit="contain" style={StyleSheet.absoluteFill} />
+            <Image source={image} contentFit="contain" transition={poseTransition} style={StyleSheet.absoluteFill} />
             {/* Silhouette tint and shade so the cat picks up the scene's light. */}
-            <Image source={image} contentFit="contain" tintColor={tint.color} style={[StyleSheet.absoluteFill, { opacity: tint.opacity }]} />
+            <Image
+              source={image}
+              contentFit="contain"
+              transition={poseTransition}
+              tintColor={tint.color}
+              style={[StyleSheet.absoluteFill, { opacity: tint.opacity }]}
+            />
             {tint.shade > 0 ? (
-              <Image source={image} contentFit="contain" tintColor="#000000" style={[StyleSheet.absoluteFill, { opacity: tint.shade }]} />
+              <Image
+                source={image}
+                contentFit="contain"
+                transition={poseTransition}
+                tintColor="#000000"
+                style={[StyleSheet.absoluteFill, { opacity: tint.shade }]}
+              />
             ) : null}
           </Animated.View>
         </Pressable>
-      </Animated.View>
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  shadow: {
-    position: 'absolute',
-    bottom: CAT_SIZE * 0.06,
-    alignSelf: 'center',
-    width: CAT_SIZE * 0.62,
-    height: 14,
-    borderRadius: 999,
-    backgroundColor: '#000000',
-  },
-});
+/**
+ * A soft black ellipse. React Native's borderRadius turns a wide box into a
+ * capsule, so this draws a circle and squashes it vertically instead.
+ */
+function Oval({
+  width,
+  height,
+  centerX,
+  centerY,
+  alpha,
+}: {
+  width: number;
+  height: number;
+  centerX: number;
+  centerY: number;
+  alpha: number;
+}) {
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        left: centerX - width / 2,
+        top: centerY - width / 2,
+        width,
+        height: width,
+        borderRadius: width / 2,
+        backgroundColor: `rgba(0, 0, 0, ${alpha})`,
+        transform: [{ scaleY: height / width }],
+      }}
+    />
+  );
+}

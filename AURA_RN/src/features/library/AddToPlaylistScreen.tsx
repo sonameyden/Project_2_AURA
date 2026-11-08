@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Alert, Pressable } from 'react-native';
+import { Pressable } from 'react-native';
 
-import { AuraText, EmptyState, ErrorMessage, Heading, LoadingState, Page } from '@/components/ui';
+import { BackButton, AuraText, EmptyState, ErrorMessage, Heading, LoadingState, Page, useToast } from '@/components/ui';
 import { auraApi } from '@/core/api';
 import { usePlayer } from '@/core/player';
 import { useAuraTheme } from '@/core/theme';
@@ -16,6 +16,7 @@ import { useAddSongToPlaylist, useEditablePlaylists } from './hooks/use-playlist
  */
 export default function AddToPlaylistScreenFeature() {
   const router = useRouter();
+  const toast = useToast();
   const { colors } = useAuraTheme();
   const { songId } = useLocalSearchParams<{ songId?: string }>();
   const { song: playingSong } = usePlayer();
@@ -33,18 +34,25 @@ export default function AddToPlaylistScreenFeature() {
 
   const add = (playlist: Playlist) => {
     if (!song) {
-      Alert.alert('No song selected', 'Choose a song before adding it to a playlist.');
+      toast.show({ title: 'No song selected', message: 'Choose a song before adding it to a playlist.', variant: 'error' });
       return;
     }
     if (playlist.songIds.includes(song.id)) {
-      Alert.alert('Already added', `${song.title} is already in ${playlist.title}.`);
+      toast.show({ title: `Already in ${playlist.title}`, message: song.title, variant: 'info' });
       return;
     }
     addSong.mutate(
-      { playlistId: playlist.id, songId: song.id },
+      { playlistId: playlist.id, song },
       {
         onSuccess: () => {
-          Alert.alert('Added to playlist', `${song.title} was added to ${playlist.title}.`);
+          toast.show({
+            title: `Added to ${playlist.title}`,
+            message: song.title,
+            action: {
+              label: 'View',
+              onPress: () => router.push({ pathname: '/playlist/[id]', params: { id: playlist.id } }),
+            },
+          });
           router.back();
         },
       },
@@ -53,6 +61,7 @@ export default function AddToPlaylistScreenFeature() {
 
   return (
     <Page>
+      <BackButton variant="close" />
       <Heading title="Add to playlist" subtitle={song?.title ?? 'Choose a playlist for this song.'} />
       {addError ? <ErrorMessage message={addError} /> : null}
       {requestedSong.error instanceof Error ? (

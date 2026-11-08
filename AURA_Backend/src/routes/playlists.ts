@@ -220,7 +220,7 @@ playlistRoutes.patch("/:playlistId", async (c) => {
       ...(title !== undefined ? { title } : {}),
       ...(typeof body.isPublic === "boolean" ? { is_public: body.isPublic } : {}),
       ...(description !== undefined ? { description } : {}),
-    }));
+    }), 4, access.playlist);
     return c.json(await detail(supabase, saved, access.role, c.get("auth").uid));
   } catch (error) {
     return fail(c, error);
@@ -240,7 +240,7 @@ playlistRoutes.post("/:playlistId/songs", async (c) => {
     if (!access) return c.json({ error: "Playlist not found" }, 404);
     const saved = await updatePlaylistAtomically(supabase, playlistId, (current) => ({
       song_ids: appendUnique(current.song_ids ?? [], requested),
-    }));
+    }), 4, access.playlist);
     return c.json(summary(saved, access.role));
   } catch (error) {
     return fail(c, error);
@@ -257,7 +257,7 @@ playlistRoutes.delete("/:playlistId/songs/:songId", async (c) => {
     if (!access) return c.json({ error: "Playlist not found" }, 404);
     const saved = await updatePlaylistAtomically(supabase, playlistId, (current) => ({
       song_ids: (current.song_ids ?? []).filter((id: string) => id !== songId),
-    }));
+    }), 4, access.playlist);
     return c.json(await detail(supabase, saved, access.role, c.get("auth").uid));
   } catch (error) {
     return fail(c, error);
@@ -277,7 +277,7 @@ playlistRoutes.put("/:playlistId/order", async (c) => {
     if (!access) return c.json({ error: "Playlist not found" }, 404);
     const saved = await updatePlaylistAtomically(supabase, playlistId, (current) => ({
       song_ids: mergeOrder(current.song_ids ?? [], requested),
-    }));
+    }), 4, access.playlist);
     return c.json(await detail(supabase, saved, access.role, c.get("auth").uid));
   } catch (error) {
     return fail(c, error);

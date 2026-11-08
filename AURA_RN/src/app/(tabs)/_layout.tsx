@@ -13,6 +13,9 @@ export default function MainTabs() {
       <Tabs
         screenOptions={{
           headerShown: false,
+          // Switching tabs crossfades instead of cutting, over the app's own background.
+          animation: 'fade',
+          sceneStyle: { backgroundColor: colors.background },
           tabBarActiveTintColor: colors.accent,
           tabBarInactiveTintColor: colors.muted,
           tabBarStyle: {

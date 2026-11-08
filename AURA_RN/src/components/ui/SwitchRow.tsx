@@ -8,7 +8,14 @@ import { useAuraTheme } from '@/core/theme';
 import { Card } from './Card';
 import { AuraText } from './Text';
 
-/** A labelled row with an on/off switch. */
+/**
+ * A labelled row with an on/off switch.
+ *
+ * When `onChange` returns a promise (e.g. a server update), the switch flips
+ * straight away and holds the new position until the promise settles; if it
+ * rejects, the switch falls back to `value`. That keeps toggles that save to
+ * the backend feeling instant instead of waiting for the round trip.
+ */
 export function SwitchRow({
   label,
   description,
@@ -16,18 +23,31 @@ export function SwitchRow({
   onChange,
 }: {
   label: string;
-  description?: string;
+  /** Text under the label; a function gets the switch's shown state. */
+  description?: string | ((value: boolean) => string);
   value: boolean;
-  onChange: (value: boolean) => void;
+  onChange: (value: boolean) => void | Promise<unknown>;
 }) {
   const { colors } = useAuraTheme();
+  const [pending, setPending] = useState<boolean | null>(null);
+  const shown = pending ?? value;
+  const text = typeof description === 'function' ? description(shown) : description;
+
+  const toggle = (next: boolean) => {
+    const result = onChange(next);
+    if (result instanceof Promise) {
+      setPending(next);
+      void result.catch(() => undefined).finally(() => setPending(null));
+    }
+  };
+
   return (
     <Card style={{ flexDirection: 'row', alignItems: 'center' }}>
       <View style={{ flex: 1, gap: 3 }}>
         <AuraText style={{ fontWeight: '600' }}>{label}</AuraText>
-        {description ? <AuraText style={{ color: colors.muted, fontSize: 12 }}>{description}</AuraText> : null}
+        {text ? <AuraText style={{ color: colors.muted, fontSize: 12 }}>{text}</AuraText> : null}
       </View>
-      <AnimatedSwitch label={label} enabled={value} onChange={onChange} />
+      <AnimatedSwitch label={label} enabled={shown} onChange={toggle} />
     </Card>
   );
 }

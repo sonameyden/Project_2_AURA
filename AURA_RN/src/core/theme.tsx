@@ -22,11 +22,13 @@ const palette = {
   },
   light: {
     background: '#F8F9FD',
-    surface: '#FFFFFFB3',
-    elevated: '#F0ECF8',
+    // Solid white cards with a soft lavender-gray outline: translucent white cards
+    // with white borders disappeared into the near-white background.
+    surface: '#FFFFFF',
+    elevated: '#F3EEFA',
     text: '#1C1925',
     muted: '#6B6875',
-    border: '#FFFFFFCC',
+    border: '#E4DEEE',
     accent: '#9333EA',
     accentEnd: '#C084FC',
     accentBlue: '#3B82F6',

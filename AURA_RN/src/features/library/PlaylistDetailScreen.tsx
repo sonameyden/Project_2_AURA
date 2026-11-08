@@ -1,8 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import {
+  BackButton,
   ActionButton,
   AuraText,
   EmptyState,
@@ -12,6 +14,7 @@ import {
   LoadingState,
   Page,
   TrackRow,
+  showAlert,
 } from '@/components/ui';
 import { useAuth } from '@/core/auth-context';
 import { usePlayer } from '@/core/player';
@@ -21,7 +24,6 @@ import { useOpenAddToPlaylist } from '@/hooks/use-open-add-to-playlist';
 
 import { IconButton } from './components/IconButton';
 import { PlaylistPeopleRow } from './components/PlaylistPeopleRow';
-import { PlaylistSharePanel } from './components/PlaylistSharePanel';
 import {
   usePlaylistDetail,
   useRemoveCollaborator,
@@ -57,7 +59,7 @@ export default function PlaylistDetailScreenFeature() {
     if (!playlist || target < 0 || target >= songs.length) return;
     const ids = songs.map((song) => song.id);
     [ids[index], ids[target]] = [ids[target], ids[index]];
-    reorder.mutate(ids, { onError: (moveError) => Alert.alert('Could not reorder', errorText(moveError)) });
+    reorder.mutate(ids, { onError: (moveError) => showAlert('Could not reorder', errorText(moveError)) });
   };
 
   const saveTitle = () => {
@@ -70,14 +72,14 @@ export default function PlaylistDetailScreenFeature() {
       { playlistId: playlist.id, title },
       {
         onSuccess: () => setDraftTitle(null),
-        onError: (renameError) => Alert.alert('Could not rename', errorText(renameError)),
+        onError: (renameError) => showAlert('Could not rename', errorText(renameError)),
       },
     );
   };
 
   const leavePlaylist = () => {
     if (!playlist || !user) return;
-    Alert.alert('Leave this playlist?', 'You will need a new invite to rejoin.', [
+    showAlert('Leave this playlist?', 'You will need a new invite to rejoin.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Leave',
@@ -85,7 +87,7 @@ export default function PlaylistDetailScreenFeature() {
         onPress: () =>
           leave.mutate(
             { playlistId: playlist.id, userId: user.uid },
-            { onSuccess: () => router.back(), onError: (leaveError) => Alert.alert('Could not leave', errorText(leaveError)) },
+            { onSuccess: () => router.back(), onError: (leaveError) => showAlert('Could not leave', errorText(leaveError)) },
           ),
       },
     ]);
@@ -93,6 +95,7 @@ export default function PlaylistDetailScreenFeature() {
 
   return (
     <Page>
+      <BackButton />
       {editing && draftTitle !== null ? (
         <Field
           label="Playlist name"
@@ -118,6 +121,16 @@ export default function PlaylistDetailScreenFeature() {
               title="Play all"
               style={{ flex: 1 }}
               onPress={() => void playSong(songs[0], songs).then(() => router.push('/now-playing'))}
+            />
+          ) : null}
+          {playlist.role === 'owner' && !editing ? (
+            <ActionButton
+              title="Share"
+              variant="secondary"
+              icon={<Ionicons name="share-social-outline" size={18} color={colors.text} />}
+              style={{ minWidth: 96 }}
+              accessibilityHint="Opens visibility, invite links and collaborators"
+              onPress={() => router.push({ pathname: '/playlist-share/[id]', params: { id: playlist.id } })}
             />
           ) : null}
           {canEdit ? (
@@ -168,7 +181,7 @@ export default function PlaylistDetailScreenFeature() {
                   onPress={() =>
                     removeSong.mutate(
                       { playlistId: playlist.id, songId: song.id },
-                      { onError: (removeError) => Alert.alert('Could not remove song', errorText(removeError)) },
+                      { onError: (removeError) => showAlert('Could not remove song', errorText(removeError)) },
                     )
                   }
                 />
@@ -178,7 +191,6 @@ export default function PlaylistDetailScreenFeature() {
         />
       ))}
 
-      {playlist?.role === 'owner' ? <PlaylistSharePanel playlist={playlist} /> : null}
       {playlist && playlist.role !== 'owner' && playlist.isMember ? (
         <Pressable onPress={leavePlaylist} accessibilityRole="button" style={{ alignItems: 'center', paddingVertical: 8 }}>
           <AuraText style={{ color: colors.danger, fontWeight: '600' }}>Leave playlist</AuraText>

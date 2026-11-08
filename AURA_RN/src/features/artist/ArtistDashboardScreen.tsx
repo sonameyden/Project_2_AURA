@@ -1,18 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import {
+  BackButton,
   ActionButton,
   AuraText,
   Card,
   ErrorMessage,
   Field,
   Heading,
+  LoadingState,
   Page,
   SectionTitle,
   TrackRow,
+  showAlert,
 } from '@/components/ui';
 import { auraApi } from '@/core/api';
 import { useAuth } from '@/core/auth-context';
@@ -70,7 +73,7 @@ export default function ArtistDashboardScreenFeature() {
 
   const becomeArtist = async () => {
     if (!artistName.trim()) {
-      Alert.alert('Add an artist name', 'Your artist name is required to continue.');
+      showAlert('Add an artist name', 'Your artist name is required to continue.');
       return;
     }
     setWorking(true);
@@ -86,7 +89,7 @@ export default function ArtistDashboardScreenFeature() {
   };
 
   const removeArtist = () =>
-    Alert.alert(
+    showAlert(
       'Delete artist account?',
       'This permanently removes your artist profile, albums and uploaded songs. Your listener account remains.',
       [
@@ -104,7 +107,7 @@ export default function ArtistDashboardScreenFeature() {
                 setAlbums([]);
               })
               .catch((deleteError: unknown) =>
-                Alert.alert('Could not delete artist account', deleteError instanceof Error ? deleteError.message : 'Please try again.'),
+                showAlert('Could not delete artist account', deleteError instanceof Error ? deleteError.message : 'Please try again.'),
               )
               .finally(() => setWorking(false));
           },
@@ -113,12 +116,17 @@ export default function ArtistDashboardScreenFeature() {
     );
 
   if (loading) {
-    return <Page><AuraText>Loading your creator dashboard…</AuraText></Page>;
+    return (
+      <Page style={{ justifyContent: 'center' }}>
+        <LoadingState label="Loading your creator dashboard…" />
+      </Page>
+    );
   }
 
   if (!artist) {
     return (
       <Page>
+        <BackButton />
         <Heading title="Become an artist" subtitle="Share your music with the AURA community." />
         {error ? <ErrorMessage message={error} onRetry={() => void load()} /> : null}
         <Card>
@@ -132,6 +140,7 @@ export default function ArtistDashboardScreenFeature() {
 
   return (
     <Page>
+      <BackButton />
       <Heading title="Artist dashboard" subtitle={`Welcome, ${artist.name}.`} />
       {error ? <ErrorMessage message={error} onRetry={() => void load()} /> : null}
       <View style={{ flexDirection: 'row', gap: 10 }}>

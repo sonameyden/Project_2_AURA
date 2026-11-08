@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
-import { Alert, FlatList, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 
-import { AuraText, EmptyState, ErrorMessage, Heading, LoadingState, Page, TrackRow } from '@/components/ui';
+import { BackButton, AuraText, EmptyState, ErrorMessage, Heading, LoadingState, Page, TrackRow, showAlert } from '@/components/ui';
 import { auraApi } from '@/core/api';
 import { usePlayer } from '@/core/player';
 import { useAuraTheme } from '@/core/theme';
@@ -24,6 +24,7 @@ export function SongListScreen({ kind }: { kind: 'liked' | 'history' }) {
 
   return (
     <Page scroll={false} style={{ paddingBottom: 0 }}>
+      <BackButton />
       <FlatList
         data={songs}
         // History can contain the same song more than once.
@@ -70,7 +71,7 @@ export function SongListScreen({ kind }: { kind: 'liked' | 'history' }) {
                       { song, liked: false },
                       {
                         onError: (removeError) =>
-                          Alert.alert(
+                          showAlert(
                             'Could not remove song',
                             removeError instanceof Error ? removeError.message : 'Please try again.',
                           ),

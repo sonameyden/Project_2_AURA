@@ -1,16 +1,18 @@
-import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable } from 'react-native';
 
-import { ActionButton, Artwork, ErrorMessage, Field, Heading, Page, AuraText } from '@/components/ui';
+import { BackButton, ActionButton, Artwork, ErrorMessage, Field, Heading, Page, AuraText } from '@/components/ui';
 import { auraApi } from '@/core/api';
 import { useAuth } from '@/core/auth-context';
 import { appendUploadFile, type SelectedUpload } from '@/core/native-upload';
+import { IMAGE_MAX_SIZE, pickImageUpload } from '@/core/pick-image';
 import { useAuraTheme } from '@/core/theme';
+import { useRefreshCatalog } from '@/hooks/use-refresh-catalog';
 
 export default function CreateAlbumScreenFeature() {
   const router = useRouter();
+  const refreshCatalog = useRefreshCatalog();
   const { getToken } = useAuth();
   const [title, setTitle] = useState('');
   const [releaseDate, setReleaseDate] = useState('');
@@ -19,21 +21,8 @@ export default function CreateAlbumScreenFeature() {
   const [working, setWorking] = useState(false);
 
   const chooseArtwork = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.85,
-    });
-    if (result.canceled) return;
-    const image = result.assets[0];
-    if (!image) return;
-    setArtwork({
-      uri: image.uri,
-      name: image.fileName ?? 'album-cover.jpg',
-      mimeType: image.mimeType ?? 'image/jpeg',
-      size: image.fileSize,
-    });
+    const image = await pickImageUpload({ fallbackName: 'album-cover.jpg', maxSize: IMAGE_MAX_SIZE.artwork });
+    if (image) setArtwork(image);
   };
 
   const create = async () => {
@@ -54,6 +43,8 @@ export default function CreateAlbumScreenFeature() {
       form.append('releaseDate', releaseDate.trim());
       if (artwork) appendUploadFile(form, 'artwork', artwork);
       const album = await auraApi.createAlbum(token, form);
+      // The new album shows up on the artist page and Home without waiting for their cache to expire.
+      void refreshCatalog();
       router.replace({ pathname: '/album/[id]', params: { id: album.id } });
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : 'Album could not be created.');
@@ -64,6 +55,7 @@ export default function CreateAlbumScreenFeature() {
 
   return (
     <Page>
+      <BackButton />
       <Heading title="Create an album" subtitle="Give your tracks a place to live together." />
       {error ? <ErrorMessage message={error} /> : null}
       <PressableArtwork onPress={() => void chooseArtwork()} uri={artwork?.uri ?? null} />

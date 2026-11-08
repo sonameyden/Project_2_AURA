@@ -140,8 +140,10 @@ features/<feature>/
 - Prefer app config and config plugins for native configuration. Make changes
   under `android/` only when a task requires native project changes, and keep
   them reproducible with the Expo configuration.
-- Rive and background audio require a development or production build; do not
-  assume they work in Expo Go.
+- The app must keep running in Expo Go on Android and iOS. Only use native
+  modules that Expo Go bundles (`npx expo install` picks matching versions).
+  Background audio and lock screen controls need a development or production
+  build; guard them with `isExpoGo` from `src/core/runtime.ts`.
 - Follow `eas.json` profiles for builds and updates. OTA updates must not be
   used for changes that require a new native binary.
 
@@ -170,7 +172,7 @@ features/<feature>/
 
 The app follows TypeScript strict mode, Expo Router routes under `src/app/`,
 feature-owned screens and hooks, shared cross-cutting code in `src/core/`,
-platform-specific auth/Rive files, one API client, and TanStack Query with
+platform-specific auth files, one API client, and TanStack Query with
 account-scoped keys and cache clearing.
 
 Where things live now:

@@ -12,6 +12,13 @@ describe('saved settings', () => {
     ).toEqual({ visualIntensity: 'high', showCat: false });
   });
 
+  it('reads the crossfade length and migrates the old on/off value', () => {
+    expect(parseStored(JSON.stringify({ crossfade: '8' }))).toEqual({ crossfade: '8' });
+    expect(parseStored(JSON.stringify({ crossfade: true }))).toEqual({ crossfade: '5' });
+    expect(parseStored(JSON.stringify({ crossfade: false }))).toEqual({ crossfade: 'off' });
+    expect(parseStored(JSON.stringify({ crossfade: '20' }))).toEqual({});
+  });
+
   it('ignores missing or corrupt storage', () => {
     expect(parseStored(null)).toEqual({});
     expect(parseStored('{not json')).toEqual({});

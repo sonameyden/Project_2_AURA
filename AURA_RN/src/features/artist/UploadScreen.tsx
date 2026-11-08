@@ -1,14 +1,16 @@
 import * as DocumentPicker from 'expo-document-picker';
-import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable } from 'react-native';
+import { Pressable } from 'react-native';
 
-import { ActionButton, Artwork, AuraText, ErrorMessage, Field, Heading, Page } from '@/components/ui';
+import { BackButton, ActionButton, Artwork, AuraText, ErrorMessage, Field, Heading, Page, useToast } from '@/components/ui';
 import { auraApi } from '@/core/api';
 import { useAuth } from '@/core/auth-context';
 import { appendUploadFile, type SelectedUpload } from '@/core/native-upload';
+import { audioMime } from '@/core/audio-mime';
+import { IMAGE_MAX_SIZE, pickImageUpload } from '@/core/pick-image';
 import { useAuraTheme } from '@/core/theme';
+import { useRefreshCatalog } from '@/hooks/use-refresh-catalog';
 import { readAudioDuration } from '@/core/read-audio-duration';
 
 const maximumAudioSize = 50 * 1024 * 1024;
@@ -16,6 +18,8 @@ const maximumAudioSize = 50 * 1024 * 1024;
 export default function UploadScreenFeature() {
   const { albumId } = useLocalSearchParams<{ albumId?: string }>();
   const router = useRouter();
+  const toast = useToast();
+  const refreshCatalog = useRefreshCatalog();
   const { getToken } = useAuth();
   const { colors } = useAuraTheme();
   const [artistName, setArtistName] = useState('');
@@ -59,7 +63,8 @@ export default function UploadScreenFeature() {
     setAudio({
       uri: file.uri,
       name: file.name,
-      mimeType: file.mimeType ?? audioMime(file.name),
+      // Android sometimes labels audio as application/octet-stream, which the backend rejects.
+      mimeType: file.mimeType?.startsWith('audio/') ? file.mimeType : audioMime(file.name),
       size: file.size,
     });
     setError(null);
@@ -73,27 +78,18 @@ export default function UploadScreenFeature() {
   };
 
   const selectArtwork = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.85,
-    });
-    if (result.canceled) return;
-    const image = result.assets[0];
-    if (!image) return;
-    setArtwork({
-      uri: image.uri,
-      name: image.fileName ?? 'artwork.jpg',
-      mimeType: image.mimeType ?? 'image/jpeg',
-      size: image.fileSize,
-    });
+    const image = await pickImageUpload({ fallbackName: 'artwork.jpg', maxSize: IMAGE_MAX_SIZE.artwork });
+    if (image) setArtwork(image);
   };
 
   const upload = async () => {
     const duration = Number(durationSeconds);
     if (!audio || !title.trim() || !artistName.trim() || !Number.isFinite(duration) || duration <= 0) {
-      Alert.alert('Complete the track details', 'Add artwork (optional), a title, an audio file and the track duration.');
+      toast.show({
+        title: 'Complete the track details',
+        message: 'Add a title, an audio file and the track duration (artwork is optional).',
+        variant: 'error',
+      });
       return;
     }
     setWorking(true);
@@ -109,9 +105,10 @@ export default function UploadScreenFeature() {
       form.append('durationMs', String(Math.round(duration * 1000)));
       if (albumId) form.append('albumId', albumId);
       await auraApi.uploadSong(token, form);
-      Alert.alert('Upload successful', 'Your track is now in the AURA catalog.', [
-        { text: 'Done', onPress: () => router.back() },
-      ]);
+      // Refresh the artist page, album and Home before going back, so the new song is already there.
+      await refreshCatalog().catch(() => undefined);
+      toast.show({ title: 'Upload successful', message: `${title.trim()} is now in the AURA catalog.` });
+      router.back();
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : 'Track upload failed.');
     } finally {
@@ -121,6 +118,7 @@ export default function UploadScreenFeature() {
 
   return (
     <Page>
+      <BackButton />
       <Heading title="Upload music" subtitle={albumId ? 'Add a new track to your album.' : 'Share a new experience with AURA listeners.'} />
       {error ? <ErrorMessage message={error} /> : null}
       <Pressable onPress={() => void selectArtwork()} style={{ alignSelf: 'center', alignItems: 'center', gap: 8 }}>
@@ -148,12 +146,4 @@ export default function UploadScreenFeature() {
       <ActionButton title="Upload track" onPress={() => void upload()} loading={working} />
     </Page>
   );
-}
-
-function audioMime(name: string) {
-  const extension = name.split('.').pop()?.toLowerCase();
-  if (extension === 'wav') return 'audio/wav';
-  if (extension === 'flac') return 'audio/flac';
-  if (extension === 'm4a') return 'audio/mp4';
-  return 'audio/mpeg';
 }
