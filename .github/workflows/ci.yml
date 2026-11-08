@@ -1,0 +1,57 @@
+name: CI
+
+# Checks every push and pull request: formatting, lint, types and tests for the
+# React Native app and the Cloudflare Worker backend.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: App (AURA_RN)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: AURA_RN
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: AURA_RN/package-lock.json
+      - run: npm ci
+      - name: Formatting
+        run: npm run format:check
+      - name: Lint
+        run: npm run lint
+      - name: Type check
+        run: npm run typecheck
+      - name: Tests
+        run: npm test -- --ci
+
+  backend:
+    name: Backend (AURA_Backend)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: AURA_Backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: AURA_Backend/package-lock.json
+      - run: npm ci
+      - name: Formatting
+        run: npm run format:check
+      - name: Type check
+        run: npm run typecheck
+      - name: Tests
+        run: npm test

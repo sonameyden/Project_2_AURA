@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { Env } from "./types";
 import { corsMiddleware } from "./lib/cors";
 import { requireAuth } from "./lib/firebaseAuth";
+import { rateLimit } from "./lib/rateLimit";
 import { catalogRoutes } from "./routes/catalog";
 import { atmosphereRoutes } from "./routes/atmosphere";
 import { lyricsRoutes } from "./routes/lyrics";
@@ -36,6 +37,14 @@ app.use("/lyrics/*", requireAuth);
 app.use("/library/*", requireAuth);
 app.use("/discover/*", requireAuth);
 app.use("/profiles/*", requireAuth);
+
+// Per-user rate limits (after auth, so each user has their own budget). OpenAI-backed
+// endpoints get a tighter limit because every call costs money.
+for (const prefix of ["/catalog/*", "/atmosphere/*", "/lyrics/*", "/library/*", "/discover/*", "/profiles/*"]) {
+  app.use(prefix, rateLimit("API_RATE_LIMITER"));
+}
+app.use("/discover/search", rateLimit("AI_RATE_LIMITER"));
+app.use("/atmosphere/mood", rateLimit("AI_RATE_LIMITER"));
 
 app.route("/catalog", catalogRoutes);
 app.route("/atmosphere", atmosphereRoutes);

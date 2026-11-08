@@ -51,7 +51,11 @@ export function PlayerControls({ accentColor }: { accentColor: string }) {
           accessibilityRole="button"
           accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
           style={styles.playButton}>
-          <Ionicons name={isBuffering ? 'hourglass-outline' : isPlaying ? 'pause' : 'play'} size={28} color={accentColor} />
+          <Ionicons
+            name={isBuffering ? 'hourglass-outline' : isPlaying ? 'pause' : 'play'}
+            size={28}
+            color={accentColor}
+          />
         </Pressable>
         <Pressable
           onPress={() => void playNext()}
@@ -116,7 +120,12 @@ function SeekBar() {
         accessible
         accessibilityRole="adjustable"
         accessibilityLabel="Playback position"
-        accessibilityValue={{ min: 0, max: Math.round(duration), now: Math.round(currentTime), text: formatTime(currentTime) }}
+        accessibilityValue={{
+          min: 0,
+          max: Math.round(duration),
+          now: Math.round(currentTime),
+          text: formatTime(currentTime),
+        }}
         accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
         onAccessibilityAction={(event) => {
           const delta = event.nativeEvent.actionName === 'increment' ? 10 : -10;
@@ -128,7 +137,11 @@ function SeekBar() {
         </View>
         <View
           pointerEvents="none"
-          style={[styles.thumb, { left: ratio * width - (dragRatio === null ? 5 : 8) }, dragRatio !== null && styles.thumbActive]}
+          style={[
+            styles.thumb,
+            { left: ratio * width - (dragRatio === null ? 5 : 8) },
+            dragRatio !== null && styles.thumbActive,
+          ]}
         />
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -157,7 +170,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   disabled: { opacity: 0.35 },
-  dot: { position: 'absolute', bottom: -6, alignSelf: 'center', width: 4, height: 4, borderRadius: 2, backgroundColor: ON },
+  dot: {
+    position: 'absolute',
+    bottom: -6,
+    alignSelf: 'center',
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: ON,
+  },
   track: { height: 28, justifyContent: 'center' },
   rail: { height: 4, borderRadius: 4, backgroundColor: '#FFFFFF38', overflow: 'hidden' },
   fill: { height: 4, borderRadius: 4, backgroundColor: '#FFFFFF' },

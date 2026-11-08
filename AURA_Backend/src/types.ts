@@ -4,25 +4,20 @@
 // side, rename it on both.
 
 export type EnvironmentType =
-  | "Heaven" | "Nature" | "Ocean" | "Dream"
-  | "Romantic" | "Melancholic" | "Hopeful" | "Energetic";
+  "Heaven" | "Nature" | "Ocean" | "Dream" | "Romantic" | "Melancholic" | "Hopeful" | "Energetic";
 
 export type LightingStyle = "Soft" | "Bright" | "Dramatic" | "Fading";
 
-export type ParticleStyle =
-  | "Dust" | "Rain" | "Bubbles" | "Petals" | "Stars" | "Sparks" | "None";
+export type ParticleStyle = "Dust" | "Rain" | "Bubbles" | "Petals" | "Stars" | "Sparks" | "None";
 
 export type KaleidoscopeStyle =
-  | "SoftOrganic" | "FluidSymmetry" | "WaveLike"
-  | "SharpGeometric" | "DarkReflective" | "Floral";
+  "SoftOrganic" | "FluidSymmetry" | "WaveLike" | "SharpGeometric" | "DarkReflective" | "Floral";
 
-export type CatBehaviorState =
-  | "Idle" | "Sleeping" | "Walking" | "Stretching" | "Playing" | "Running" | "Watching";
+export type CatBehaviorState = "Idle" | "Sleeping" | "Walking" | "Stretching" | "Playing" | "Running" | "Watching";
 
 export type TransitionStyle = "Gentle" | "Progressive" | "Sharp";
 
-export type SongSection =
-  | "Intro" | "Verse" | "PreChorus" | "Chorus" | "Bridge" | "FinalChorus" | "Outro";
+export type SongSection = "Intro" | "Verse" | "PreChorus" | "Chorus" | "Bridge" | "FinalChorus" | "Outro";
 
 /**
  * Cat behaviours used inside section timelines. `Dancing` is Project II-only,
@@ -94,8 +89,8 @@ export interface Playlist {
 export interface AtmosphereProfile {
   songId: string;
   emotion: string;
-  energy: number;   // 0..1
-  valence: number;  // 0..1
+  energy: number; // 0..1
+  valence: number; // 0..1
   environment: EnvironmentType;
   primaryColorHex: string;
   secondaryColorHexes: string[];
@@ -142,4 +137,9 @@ export interface Env {
   GENIUS_API_KEY: string;
   FIREBASE_PROJECT_ID: string;
   FIREBASE_WEB_API_KEY: string;
+  /** Comma-separated browser origins allowed by CORS (see lib/cors.ts). Optional. */
+  ALLOWED_ORIGINS?: string;
+  /** Cloudflare Rate Limiting bindings (wrangler.toml); optional so tests and older deployments still work. */
+  API_RATE_LIMITER?: RateLimit;
+  AI_RATE_LIMITER?: RateLimit;
 }

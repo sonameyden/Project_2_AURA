@@ -28,7 +28,10 @@ type Person = { userId: string; displayName: string | null; imageUrl: string | n
 async function loadPeople(supabase: SupabaseClient, userIds: string[]): Promise<Map<string, Person>> {
   const people = new Map<string, Person>();
   if (!userIds.length) return people;
-  const { data } = await supabase.from("user_profiles").select("user_id, display_name, image_url").in("user_id", userIds);
+  const { data } = await supabase
+    .from("user_profiles")
+    .select("user_id, display_name, image_url")
+    .in("user_id", userIds);
   for (const row of (data ?? []) as any[]) {
     people.set(row.user_id, { userId: row.user_id, displayName: row.display_name, imageUrl: row.image_url });
   }
@@ -55,7 +58,7 @@ async function detail(supabase: SupabaseClient, row: PlaylistRow, role: Playlist
   ]);
   if (songs.error) throw new Error(songs.error.message);
   const byId = new Map((songs.data ?? []).map((song: any) => [song.id, rowToSong(song)]));
-  const collaboratorRows = (collaborators.error ? [] : collaborators.data ?? []) as any[];
+  const collaboratorRows = (collaborators.error ? [] : (collaborators.data ?? [])) as any[];
   const people = await loadPeople(supabase, [row.owner_id, ...collaboratorRows.map((item) => item.user_id)]);
 
   return {
@@ -91,7 +94,7 @@ playlistRoutes.get("/", async (c) => {
   ]);
   if (owned.error) return c.json({ error: owned.error.message }, 500);
 
-  const sharedPlaylists = (shared.error ? [] : shared.data ?? []).flatMap((item: any) => {
+  const sharedPlaylists = (shared.error ? [] : (shared.data ?? [])).flatMap((item: any) => {
     const row = Array.isArray(item.playlists) ? item.playlists[0] : item.playlists;
     return row ? [summary(row, item.role)] : [];
   });
@@ -100,7 +103,13 @@ playlistRoutes.get("/", async (c) => {
 
 playlistRoutes.post("/", async (c) => {
   const userId = c.get("auth").uid;
-  const body = await readJsonBody<{ title: string; songIds: string[]; isPublic: boolean; coverColorHex: string | null; description: string }>(c);
+  const body = await readJsonBody<{
+    title: string;
+    songIds: string[];
+    isPublic: boolean;
+    coverColorHex: string | null;
+    description: string;
+  }>(c);
   if (!body) return invalidJsonResponse(c);
   const title = typeof body.title === "string" ? body.title.trim() : "";
   if (!title) return c.json({ error: "title is required" }, 400);
@@ -161,7 +170,11 @@ playlistRoutes.post("/invites/:code/accept", async (c) => {
   const invite = await loadInvite(supabase, c.req.param("code"));
   if (!invite) return c.json({ error: "This invite link is invalid or has expired" }, 404);
 
-  const { data: playlist } = await supabase.from("playlists").select("id, owner_id").eq("id", invite.playlist_id).maybeSingle();
+  const { data: playlist } = await supabase
+    .from("playlists")
+    .select("id, owner_id")
+    .eq("id", invite.playlist_id)
+    .maybeSingle();
   if (!playlist) return c.json({ error: "This playlist no longer exists" }, 404);
   if (playlist.owner_id === userId) return c.json({ playlistId: playlist.id, role: "owner" });
 
@@ -178,7 +191,10 @@ playlistRoutes.post("/invites/:code/accept", async (c) => {
     .from("playlist_collaborators")
     .upsert({ playlist_id: playlist.id, user_id: userId, role, invited_by: invite.created_by });
   if (error) return c.json({ error: error.message }, 500);
-  await supabase.from("playlist_invites").update({ uses: (invite.uses ?? 0) + 1 }).eq("code", invite.code);
+  await supabase
+    .from("playlist_invites")
+    .update({ uses: (invite.uses ?? 0) + 1 })
+    .eq("code", invite.code);
   return c.json({ playlistId: playlist.id, role });
 });
 
@@ -214,13 +230,20 @@ playlistRoutes.patch("/:playlistId", async (c) => {
     if (title !== undefined && (!title || title.length > 80)) {
       return c.json({ error: "title must be 1-80 characters" }, 400);
     }
-    const description = typeof body.description === "string" ? body.description.trim().slice(0, 300) || null : body.description;
+    const description =
+      typeof body.description === "string" ? body.description.trim().slice(0, 300) || null : body.description;
 
-    const saved = await updatePlaylistAtomically(supabase, playlistId, () => ({
-      ...(title !== undefined ? { title } : {}),
-      ...(typeof body.isPublic === "boolean" ? { is_public: body.isPublic } : {}),
-      ...(description !== undefined ? { description } : {}),
-    }), 4, access.playlist);
+    const saved = await updatePlaylistAtomically(
+      supabase,
+      playlistId,
+      () => ({
+        ...(title !== undefined ? { title } : {}),
+        ...(typeof body.isPublic === "boolean" ? { is_public: body.isPublic } : {}),
+        ...(description !== undefined ? { description } : {}),
+      }),
+      4,
+      access.playlist,
+    );
     return c.json(await detail(supabase, saved, access.role, c.get("auth").uid));
   } catch (error) {
     return fail(c, error);
@@ -238,9 +261,15 @@ playlistRoutes.post("/:playlistId/songs", async (c) => {
   try {
     const access = await findPlaylistWithRole(supabase, playlistId, c.get("auth").uid, "editor");
     if (!access) return c.json({ error: "Playlist not found" }, 404);
-    const saved = await updatePlaylistAtomically(supabase, playlistId, (current) => ({
-      song_ids: appendUnique(current.song_ids ?? [], requested),
-    }), 4, access.playlist);
+    const saved = await updatePlaylistAtomically(
+      supabase,
+      playlistId,
+      (current) => ({
+        song_ids: appendUnique(current.song_ids ?? [], requested),
+      }),
+      4,
+      access.playlist,
+    );
     return c.json(summary(saved, access.role));
   } catch (error) {
     return fail(c, error);
@@ -255,9 +284,15 @@ playlistRoutes.delete("/:playlistId/songs/:songId", async (c) => {
   try {
     const access = await findPlaylistWithRole(supabase, playlistId, c.get("auth").uid, "editor");
     if (!access) return c.json({ error: "Playlist not found" }, 404);
-    const saved = await updatePlaylistAtomically(supabase, playlistId, (current) => ({
-      song_ids: (current.song_ids ?? []).filter((id: string) => id !== songId),
-    }), 4, access.playlist);
+    const saved = await updatePlaylistAtomically(
+      supabase,
+      playlistId,
+      (current) => ({
+        song_ids: (current.song_ids ?? []).filter((id: string) => id !== songId),
+      }),
+      4,
+      access.playlist,
+    );
     return c.json(await detail(supabase, saved, access.role, c.get("auth").uid));
   } catch (error) {
     return fail(c, error);
@@ -275,9 +310,15 @@ playlistRoutes.put("/:playlistId/order", async (c) => {
   try {
     const access = await findPlaylistWithRole(supabase, playlistId, c.get("auth").uid, "editor");
     if (!access) return c.json({ error: "Playlist not found" }, 404);
-    const saved = await updatePlaylistAtomically(supabase, playlistId, (current) => ({
-      song_ids: mergeOrder(current.song_ids ?? [], requested),
-    }), 4, access.playlist);
+    const saved = await updatePlaylistAtomically(
+      supabase,
+      playlistId,
+      (current) => ({
+        song_ids: mergeOrder(current.song_ids ?? [], requested),
+      }),
+      4,
+      access.playlist,
+    );
     return c.json(await detail(supabase, saved, access.role, c.get("auth").uid));
   } catch (error) {
     return fail(c, error);
@@ -330,7 +371,7 @@ playlistRoutes.post("/:playlistId/invites", async (c) => {
       url: `${origin}/invite/${code}`,
       appUrl: `aura://invite/${code}`,
     },
-    201
+    201,
   );
 });
 
@@ -381,7 +422,11 @@ playlistRoutes.delete("/:playlistId/collaborators/:userId", async (c) => {
     return c.json({ error: "Only the owner can remove other collaborators" }, 403);
   }
 
-  const { error } = await supabase.from("playlist_collaborators").delete().eq("playlist_id", playlistId).eq("user_id", targetId);
+  const { error } = await supabase
+    .from("playlist_collaborators")
+    .delete()
+    .eq("playlist_id", playlistId)
+    .eq("user_id", targetId);
   if (error) return c.json({ error: error.message }, 500);
   return c.json({ removed: true, userId: targetId });
 });

@@ -97,16 +97,19 @@ export function AuraThemeProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const setMode = useCallback(async (nextMode: 'dark' | 'light') => {
-    const previousMode = mode;
-    setModeState(nextMode);
-    try {
-      await AsyncStorage.setItem(themeStorageKey, nextMode);
-    } catch (error) {
-      setModeState(previousMode);
-      throw error;
-    }
-  }, [mode]);
+  const setMode = useCallback(
+    async (nextMode: 'dark' | 'light') => {
+      const previousMode = mode;
+      setModeState(nextMode);
+      try {
+        await AsyncStorage.setItem(themeStorageKey, nextMode);
+      } catch (error) {
+        setModeState(previousMode);
+        throw error;
+      }
+    },
+    [mode],
+  );
 
   useEffect(() => {
     if (reducedMotion) return;
@@ -121,10 +124,7 @@ export function AuraThemeProvider({ children }: { children: React.ReactNode }) {
   }, [mode, reducedMotion, transitionOpacity]);
 
   const colors: AuraColors = contrast ? highContrast[mode] : palette[mode];
-  const value = useMemo(
-    () => ({ mode, colors, highContrast: contrast, setMode }),
-    [colors, contrast, mode, setMode],
-  );
+  const value = useMemo(() => ({ mode, colors, highContrast: contrast, setMode }), [colors, contrast, mode, setMode]);
 
   return (
     <ThemeContext.Provider value={value}>

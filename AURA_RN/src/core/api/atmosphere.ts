@@ -7,8 +7,7 @@ export const atmosphereApi = {
       method: 'POST',
       body: { moodText, recentlyPlayedSongIds },
     }),
-  atmosphere: (token: string, songId: string) =>
-    request<AtmosphereProfile>(`atmosphere/song/${encode(songId)}`, token),
+  atmosphere: (token: string, songId: string) => request<AtmosphereProfile>(`atmosphere/song/${encode(songId)}`, token),
   lyrics: (token: string, songId: string) =>
     request<{ songId: string; lines: LyricLine[] }>(`lyrics/${encode(songId)}`, token),
 };

@@ -8,8 +8,11 @@ export const playlistsApi = {
   createPlaylist: (token: string, title: string) =>
     request<PlaylistSummary>('library/playlists', token, json('POST', { title })),
   playlist: (token: string, id: string, signal?: AbortSignal) => request<PlaylistDetail>(base(id), token, { signal }),
-  updatePlaylist: (token: string, id: string, changes: { title?: string; isPublic?: boolean; description?: string | null }) =>
-    request<PlaylistDetail>(base(id), token, json('PATCH', changes)),
+  updatePlaylist: (
+    token: string,
+    id: string,
+    changes: { title?: string; isPublic?: boolean; description?: string | null },
+  ) => request<PlaylistDetail>(base(id), token, json('PATCH', changes)),
   deletePlaylist: (token: string, id: string) => request<void>(base(id), token, { method: 'DELETE' }),
 
   addSongToPlaylist: (token: string, playlistId: string, songId: string) =>
@@ -26,7 +29,11 @@ export const playlistsApi = {
   invitePreview: (token: string, code: string) =>
     request<InvitePreview>(`library/playlists/invites/${encode(code)}`, token),
   acceptInvite: (token: string, code: string) =>
-    request<{ playlistId: string; role: string }>(`library/playlists/invites/${encode(code)}/accept`, token, json('POST', {})),
+    request<{ playlistId: string; role: string }>(
+      `library/playlists/invites/${encode(code)}/accept`,
+      token,
+      json('POST', {}),
+    ),
   updateCollaborator: (token: string, playlistId: string, userId: string, role: 'viewer' | 'editor') =>
     request<PlaylistDetail>(`${base(playlistId)}/collaborators/${encode(userId)}`, token, json('PATCH', { role })),
   removeCollaborator: (token: string, playlistId: string, userId: string) =>

@@ -181,7 +181,14 @@ export function CatCompanion({
       <View pointerEvents="box-none" style={{ width: CAT_SIZE, height: CAT_SIZE }}>
         <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, shadowStyle]}>
           {SHADOW_LAYERS.map((layer) => (
-            <Oval key={layer.w} width={layer.w} height={layer.h} centerX={CAT_SIZE / 2} centerY={FEET_Y} alpha={layer.alpha} />
+            <Oval
+              key={layer.w}
+              width={layer.w}
+              height={layer.h}
+              centerX={CAT_SIZE / 2}
+              centerY={FEET_Y}
+              alpha={layer.alpha}
+            />
           ))}
           {pawContact ? (
             <Oval

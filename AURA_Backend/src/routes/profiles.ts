@@ -28,7 +28,13 @@ profileRoutes.get("/:userId", async (c) => {
   try {
     const [profile, playlists, artist, follows, likes] = await Promise.all([
       supabase.from("user_profiles").select("*").eq("user_id", userId).maybeSingle(),
-      supabase.from("playlists").select("*").eq("owner_id", userId).eq("is_public", true).order("id", { ascending: false }).limit(20),
+      supabase
+        .from("playlists")
+        .select("*")
+        .eq("owner_id", userId)
+        .eq("is_public", true)
+        .order("id", { ascending: false })
+        .limit(20),
       supabase.from("artists").select("*").eq("id", userId).maybeSingle(),
       supabase.from("artist_follows").select("artist_id", { count: "exact", head: true }).eq("user_id", userId),
       supabase.from("liked_songs").select("song_id", { count: "exact", head: true }).eq("user_id", userId),
@@ -58,7 +64,7 @@ profileRoutes.get("/:userId", async (c) => {
     return c.json({
       userId,
       isSelf,
-      displayName: profile.data?.display_name ?? (isSelf ? c.get("auth").email?.split("@")[0] ?? null : null),
+      displayName: profile.data?.display_name ?? (isSelf ? (c.get("auth").email?.split("@")[0] ?? null) : null),
       imageUrl: profile.data?.image_url ?? null,
       bio: profile.data?.bio ?? null,
       showListening: profile.data?.show_listening !== false,

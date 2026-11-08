@@ -33,7 +33,12 @@ const backgrounds: Record<AtmosphereProfile['environment'] | 'Common', number> =
  * brightness factors in the Kotlin EnvironmentCanvas: Soft 0.85, Bright 1.15,
  * Dramatic 1.0 (with deeper edges), Fading pulsing between 0.7 and 1.0.
  */
-const DARKEN: Record<AtmosphereProfile['lightingStyle'], number> = { Soft: 0.15, Bright: 0, Dramatic: 0.08, Fading: 0.2 };
+const DARKEN: Record<AtmosphereProfile['lightingStyle'], number> = {
+  Soft: 0.15,
+  Bright: 0,
+  Dramatic: 0.08,
+  Fading: 0.2,
+};
 const BRIGHTEN: Record<AtmosphereProfile['lightingStyle'], number> = { Soft: 0, Bright: 0.12, Dramatic: 0, Fading: 0 };
 
 export function EnvironmentBackdrop({ look, playing }: { look: SceneLook; playing: boolean }) {
@@ -46,8 +51,16 @@ export function EnvironmentBackdrop({ look, playing }: { look: SceneLook; playin
 
   useEffect(() => {
     const animation = RNAnimated.parallel([
-      RNAnimated.timing(darken, { toValue: DARKEN[look.lightingStyle], duration: look.transitionMs, useNativeDriver: true }),
-      RNAnimated.timing(brighten, { toValue: BRIGHTEN[look.lightingStyle], duration: look.transitionMs, useNativeDriver: true }),
+      RNAnimated.timing(darken, {
+        toValue: DARKEN[look.lightingStyle],
+        duration: look.transitionMs,
+        useNativeDriver: true,
+      }),
+      RNAnimated.timing(brighten, {
+        toValue: BRIGHTEN[look.lightingStyle],
+        duration: look.transitionMs,
+        useNativeDriver: true,
+      }),
     ]);
     animation.start();
     return () => animation.stop();
@@ -119,4 +132,3 @@ function BeatBloom({ color, glow }: { color: string; glow: number }) {
   const style = useAnimatedStyle(() => ({ opacity: bloom.value * 0.16 * glow }));
   return <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: color }, style]} />;
 }
-

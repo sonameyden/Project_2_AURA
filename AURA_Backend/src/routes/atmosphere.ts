@@ -33,7 +33,7 @@ async function getOrGenerateAtmosphere(
   env: Env,
   song: Song,
   userMoodText: string | null,
-  defer: Defer
+  defer: Defer,
 ): Promise<AtmosphereProfile> {
   const supabase = getSupabase(env);
   const lyrics = await getLyricLines(env, song);
@@ -63,7 +63,11 @@ async function getOrGenerateAtmosphere(
 /** Timed lyrics from the shared cache, fetching from LRCLIB once on a miss. */
 async function getLyricLines(env: Env, song: Song): Promise<LyricLine[]> {
   const supabase = getSupabase(env);
-  const { data: cached } = await supabase.from("lyrics_cache").select("lyrics_json").eq("song_id", song.id).maybeSingle();
+  const { data: cached } = await supabase
+    .from("lyrics_cache")
+    .select("lyrics_json")
+    .eq("song_id", song.id)
+    .maybeSingle();
   if (Array.isArray(cached?.lyrics_json)) return cached.lyrics_json as LyricLine[];
 
   const lines = await fetchLyrics(song.title, song.artistName, song.durationMs).catch(() => null);
@@ -85,7 +89,7 @@ async function getSectionTimeline(
   song: Song,
   profile: AtmosphereProfile,
   lyrics: LyricLine[],
-  defer: Defer
+  defer: Defer,
 ): Promise<SongSectionProfile[]> {
   const supabase = getSupabase(env);
   const stored = await supabase.from("song_sections").select("sections_json").eq("song_id", song.id).maybeSingle();
@@ -103,7 +107,7 @@ async function getSectionTimeline(
           const { error } = await supabase.from("song_sections").upsert({ song_id: song.id, sections_json: timeline });
           if (error) console.warn("Section timeline was not stored:", error.message);
         })
-        .catch((error: unknown) => console.warn("Section timeline generation failed:", (error as Error).message))
+        .catch((error: unknown) => console.warn("Section timeline generation failed:", (error as Error).message)),
     );
   }
   return estimatedTimeline(profile, song.durationMs, lyrics);
@@ -165,14 +169,10 @@ atmosphereRoutes.post("/mood", async (c) => {
 
     // requestedSongTitle/requestedArtist come from the model, which echoes
     // user text — escape them like any other user input.
-    const requestedTitle = typeof interpretation.requestedSongTitle === "string"
-      ? interpretation.requestedSongTitle.trim()
-      : "";
+    const requestedTitle =
+      typeof interpretation.requestedSongTitle === "string" ? interpretation.requestedSongTitle.trim() : "";
     if (requestedTitle) {
-      query = supabase
-        .from("songs")
-        .select("*")
-        .ilike("title", likeContains(requestedTitle));
+      query = supabase.from("songs").select("*").ilike("title", likeContains(requestedTitle));
       if (typeof interpretation.requestedArtist === "string" && interpretation.requestedArtist.trim()) {
         query = query.ilike("artist_name", likeContains(interpretation.requestedArtist));
       }
@@ -184,7 +184,8 @@ atmosphereRoutes.post("/mood", async (c) => {
       return c.json({ error: "That song is not available in the catalog" }, 404);
     }
 
-    const pool = candidates && candidates.length > 0 ? candidates : (await supabase.from("songs").select("*").limit(10)).data;
+    const pool =
+      candidates && candidates.length > 0 ? candidates : (await supabase.from("songs").select("*").limit(10)).data;
     if (!pool || pool.length === 0) return c.json({ error: "No songs available in catalog" }, 404);
 
     const songs = pool.map(rowToSong);
@@ -238,6 +239,9 @@ async function recordSongFeatures(env: Env, songId: string, profile: AtmosphereP
     .eq("id", songId);
   if (!error) return;
   // Before the Phase 2 migration the tag columns don't exist; still save energy/valence.
-  const fallback = await supabase.from("songs").update({ energy: profile.energy, valence: profile.valence }).eq("id", songId);
+  const fallback = await supabase
+    .from("songs")
+    .update({ energy: profile.energy, valence: profile.valence })
+    .eq("id", songId);
   if (fallback.error) console.warn("Song features were not saved:", fallback.error.message);
 }

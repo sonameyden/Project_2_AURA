@@ -46,7 +46,9 @@ export function scoreSong(features: SongFeatures, query: QueryInterpretation): R
     score += 3;
     reasons.push(song.genre ?? genreHit);
   }
-  const moodHits = query.moods.filter((mood) => features.moodTags.some((tag) => tag.includes(mood) || mood.includes(tag)));
+  const moodHits = query.moods.filter((mood) =>
+    features.moodTags.some((tag) => tag.includes(mood) || mood.includes(tag)),
+  );
   if (moodHits.length) {
     score += 1.5 * moodHits.length;
     reasons.push(moodHits.join(", "));

@@ -166,9 +166,7 @@ type Rgba = [number, number, number, number];
 
 /** Same rules as the native `buildColorPalette`, including its defaults. */
 function buildColorPalette(primaryHex: string | undefined, secondaryHexes: string[]): Rgba[] {
-  const parsed = [primaryHex, ...secondaryHexes]
-    .map(parseHexColor)
-    .filter((color): color is Rgba => color !== null);
+  const parsed = [primaryHex, ...secondaryHexes].map(parseHexColor).filter((color): color is Rgba => color !== null);
   if (parsed.length === 0) {
     return [parseHexColor('#A79AC7')!, parseHexColor('#E9E4DE')!, parseHexColor('#A79AC7')!];
   }
@@ -212,8 +210,7 @@ function labToColor([L, A, B, alpha]: Lab): SkColor {
   const l = Math.pow(L + 0.3963377774 * A + 0.2158037573 * B, 3);
   const m = Math.pow(L - 0.1055613458 * A - 0.0638541728 * B, 3);
   const s = Math.pow(L - 0.0894841775 * A - 1.291485548 * B, 3);
-  const toSrgb = (c: number) =>
-    clamp(c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055, 0, 1);
+  const toSrgb = (c: number) => clamp(c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055, 0, 1);
   return rgba(
     toSrgb(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
     toSrgb(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
@@ -445,8 +442,7 @@ function drawMandala(
     const layerRot = baseRot * (1 + layer * 0.16);
     // The outer ring is dimmer (0.55); as a new ring grows in, the ring inside it
     // brightens to full, so nothing jumps when the ring count changes.
-    const edgeFade =
-      layer === layerCount - 1 ? 0.55 * partial : layer === layerCount - 2 ? 0.55 + 0.45 * partial : 1;
+    const edgeFade = layer === layerCount - 1 ? 0.55 * partial : layer === layerCount - 2 ? 0.55 + 0.45 * partial : 1;
     const color = colors[layer % colors.length];
     const highlight = colors[(layer + 1) % colors.length];
     const width = 14 + energy * 9 - layer * 1.2;
@@ -540,7 +536,17 @@ function drawScene(kit: Kit, s: SceneInput) {
   canvas.scale(breathe, breathe);
 
   if (s.morph < 1) {
-    drawMandala(kit, s.prevStyle, colors, activeRings, s.outerRot, effectiveEnergy, bloomEased, 1 - s.morph, s.sparkles);
+    drawMandala(
+      kit,
+      s.prevStyle,
+      colors,
+      activeRings,
+      s.outerRot,
+      effectiveEnergy,
+      bloomEased,
+      1 - s.morph,
+      s.sparkles,
+    );
   }
   drawMandala(kit, s.currentStyle, colors, activeRings, s.outerRot, effectiveEnergy, bloomEased, s.morph, s.sparkles);
 
@@ -571,7 +577,11 @@ function drawScene(kit: Kit, s: SceneInput) {
     Sk.Shader.MakeRadialGradient(
       Sk.Point(0, 0),
       coreRadius,
-      [withAlpha(coreColor, 0.85 + bloomEased * 0.15), withAlpha(colors[1] ?? coreColor, 0.35), withAlpha(coreColor, 0)],
+      [
+        withAlpha(coreColor, 0.85 + bloomEased * 0.15),
+        withAlpha(colors[1] ?? coreColor, 0.35),
+        withAlpha(coreColor, 0),
+      ],
       null,
       kit.clamp,
     ),
@@ -618,12 +628,7 @@ function drawScene(kit: Kit, s: SceneInput) {
   canvas.drawCircle(cx, cy, vignetteRadius, kit.paint);
 }
 
-function SkiaKaleidoscope({
-  atmosphere,
-  currentTime,
-  duration,
-  skia,
-}: KaleidoscopeProps & { skia: SkiaModule }) {
+function SkiaKaleidoscope({ atmosphere, currentTime, duration, skia }: KaleidoscopeProps & { skia: SkiaModule }) {
   const { Canvas, Picture, Skia: Sk } = skia;
   const enums = {
     fill: skia.PaintStyle.Fill,
@@ -747,7 +752,9 @@ function SkiaKaleidoscope({
     const sectionTarget = sectionComplexity(progressValue.value);
     const previousSection = smoothedSection.value;
     const sectionMul =
-      previousSection < 0 ? sectionTarget : previousSection + (sectionTarget - previousSection) * Math.min(1, dtMs / 900);
+      previousSection < 0
+        ? sectionTarget
+        : previousSection + (sectionTarget - previousSection) * Math.min(1, dtMs / 900);
     smoothedSection.value = sectionMul;
     const energy = animatedEnergy.value;
     const totalEnergyForMotion = clamp(energy + smoothed * 1.2, 0, 1.5);
@@ -889,7 +896,10 @@ function FallbackKaleidoscope({ atmosphere, playing, currentTime }: Kaleidoscope
             </View>
           ))}
           <Animated.View
-            style={[styles.fallbackInnerRing, { borderColor: `${secondary}A8`, transform: [{ rotate: reverseRotate }] }]}>
+            style={[
+              styles.fallbackInnerRing,
+              { borderColor: `${secondary}A8`, transform: [{ rotate: reverseRotate }] },
+            ]}>
             <MaterialCommunityIcons name={glyph} size={58} color={secondary} />
           </Animated.View>
         </Animated.View>

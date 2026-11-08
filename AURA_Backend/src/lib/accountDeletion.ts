@@ -11,9 +11,7 @@ function storagePathFromPublicUrl(env: Env, url: string | null): string | null {
 async function listStoragePaths(env: Env, prefix: string): Promise<string[]> {
   const { data, error } = await getSupabase(env).storage.from("audio").list(prefix);
   if (error) throw new Error(error.message);
-  return (data ?? [])
-    .filter((file: any) => file.id !== null)
-    .map((file: any) => `${prefix}/${file.name}`);
+  return (data ?? []).filter((file: any) => file.id !== null).map((file: any) => `${prefix}/${file.name}`);
 }
 
 /** Deletes an artist profile and all of its albums, songs, and storage files. */
@@ -34,7 +32,7 @@ export async function deleteArtistContent(env: Env, artistId: string): Promise<v
     ]),
     ...(albums ?? []).map((album: any) => storagePathFromPublicUrl(env, album.artwork_url)),
   ].filter((path): path is string => !!path);
-  storagePaths.push(...await listStoragePaths(env, `artists/${artistId}`));
+  storagePaths.push(...(await listStoragePaths(env, `artists/${artistId}`)));
 
   if (songIds.length > 0) {
     for (const table of ["atmosphere_profiles", "lyrics_cache", "liked_songs", "listening_history"]) {

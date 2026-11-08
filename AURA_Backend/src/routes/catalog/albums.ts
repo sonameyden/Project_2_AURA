@@ -54,25 +54,28 @@ albumRoutes.post("/albums", async (c) => {
 
   const supabase = getSupabase(c.env);
   const albumId = crypto.randomUUID();
-  const extension = artwork instanceof File && artwork.name.includes(".")
-    ? artwork.name.split(".").pop()
-    : "bin";
+  const extension = artwork instanceof File && artwork.name.includes(".") ? artwork.name.split(".").pop() : "bin";
   const artworkPath = `albums/${artistId}/${albumId}.${extension}`;
   let artworkUrl: string | null = null;
 
   if (artwork instanceof File) {
-    const { error } = await supabase.storage.from("audio").upload(
-      artworkPath,
-      await artwork.arrayBuffer(),
-      { contentType: artwork.type, upsert: false },
-    );
+    const { error } = await supabase.storage
+      .from("audio")
+      .upload(artworkPath, await artwork.arrayBuffer(), { contentType: artwork.type, upsert: false });
     if (error) return c.json({ error: error.message }, 500);
     artworkUrl = getVersionedAudioPublicUrl(c.env, artworkPath);
   }
 
   const { data, error } = await supabase
     .from("albums")
-    .insert({ id: albumId, title, artist_id: artistId, artwork_url: artworkUrl, song_ids: [], release_date: releaseDate })
+    .insert({
+      id: albumId,
+      title,
+      artist_id: artistId,
+      artwork_url: artworkUrl,
+      song_ids: [],
+      release_date: releaseDate,
+    })
     .select("*")
     .single();
 
@@ -104,11 +107,9 @@ albumRoutes.post("/albums/:id/artwork", async (c) => {
 
   const extension = artwork.name.includes(".") ? artwork.name.split(".").pop() : "bin";
   const artworkPath = `albums/${artistId}/${albumId}.${extension}`;
-  const { error: uploadError } = await supabase.storage.from("audio").upload(
-    artworkPath,
-    await artwork.arrayBuffer(),
-    { contentType: artwork.type, upsert: true },
-  );
+  const { error: uploadError } = await supabase.storage
+    .from("audio")
+    .upload(artworkPath, await artwork.arrayBuffer(), { contentType: artwork.type, upsert: true });
   if (uploadError) return c.json({ error: uploadError.message }, 500);
 
   const artworkUrl = getVersionedAudioPublicUrl(c.env, artworkPath);
@@ -168,7 +169,11 @@ albumRoutes.post("/albums/:id/songs", async (c) => {
     .single();
   if (error) return c.json({ error: error.message }, 500);
 
-  const { error: linkError } = await supabase.from("songs").update({ album_id: albumId }).in("id", requestedSongIds).eq("artist_id", artistId);
+  const { error: linkError } = await supabase
+    .from("songs")
+    .update({ album_id: albumId })
+    .in("id", requestedSongIds)
+    .eq("artist_id", artistId);
   if (linkError) return c.json({ error: linkError.message }, 500);
   return c.json(rowToAlbum(data));
 });
@@ -240,11 +245,7 @@ albumRoutes.delete("/albums/:id", async (c) => {
     .eq("artist_id", artistId);
   if (songsDeleteError) return c.json({ error: songsDeleteError.message }, 500);
 
-  const { error: deleteError } = await supabase
-    .from("albums")
-    .delete()
-    .eq("id", albumId)
-    .eq("artist_id", artistId);
+  const { error: deleteError } = await supabase.from("albums").delete().eq("id", albumId).eq("artist_id", artistId);
   if (deleteError) return c.json({ error: deleteError.message }, 500);
 
   const storagePaths = [
@@ -284,8 +285,10 @@ albumRoutes.get("/albums/:id/songs", async (c) => {
   if (error) return c.json({ error: error.message }, 500);
 
   const songsById = new Map((data ?? []).map((song: any) => [song.id, song]));
-  return c.json(songIds.flatMap((songId) => {
-    const song = songsById.get(songId);
-    return song ? [rowToSong(song)] : [];
-  }));
+  return c.json(
+    songIds.flatMap((songId) => {
+      const song = songsById.get(songId);
+      return song ? [rowToSong(song)] : [];
+    }),
+  );
 });

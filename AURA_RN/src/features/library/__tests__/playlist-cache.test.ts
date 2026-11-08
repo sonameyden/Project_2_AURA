@@ -31,7 +31,10 @@ const summary = (songIds: string[], version: number): PlaylistSummary => ({
 });
 
 const detail = (songs: Song[]): PlaylistDetail => ({
-  ...summary(songs.map((item) => item.id), 1),
+  ...summary(
+    songs.map((item) => item.id),
+    1,
+  ),
   songs,
   owner: { userId: 'me', displayName: 'Me', imageUrl: null },
   collaborators: [],
@@ -54,7 +57,18 @@ describe('playlist cache after adding a song', () => {
 
   it('keeps only list fields in a summary', () => {
     expect(Object.keys(toSummary(detail([song('a')]))).sort()).toEqual(
-      ['coverColorHex', 'description', 'id', 'isPublic', 'ownerId', 'role', 'songIds', 'title', 'updatedAt', 'version'].sort(),
+      [
+        'coverColorHex',
+        'description',
+        'id',
+        'isPublic',
+        'ownerId',
+        'role',
+        'songIds',
+        'title',
+        'updatedAt',
+        'version',
+      ].sort(),
     );
   });
 });

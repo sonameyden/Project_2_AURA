@@ -24,11 +24,7 @@ discoveryRoutes.get("/songs/search", async (c) => {
   const q = c.req.query("q")?.trim() ?? "";
   if (!q) return c.json([]);
 
-  const { data, error } = await getSupabase(c.env)
-    .from("songs")
-    .select("*")
-    .or(songTitleOrArtistFilter(q))
-    .limit(30);
+  const { data, error } = await getSupabase(c.env).from("songs").select("*").or(songTitleOrArtistFilter(q)).limit(30);
 
   if (error) return c.json({ error: error.message }, 500);
   return c.json((data ?? []).map(rowToSong));
@@ -63,11 +59,7 @@ discoveryRoutes.get("/albums/search", async (c) => {
   const q = c.req.query("q")?.trim() ?? "";
   if (!q) return c.json({ error: "q is required" }, 400);
 
-  const { data, error } = await getSupabase(c.env)
-    .from("albums")
-    .select("*")
-    .ilike("title", likeContains(q))
-    .limit(50);
+  const { data, error } = await getSupabase(c.env).from("albums").select("*").ilike("title", likeContains(q)).limit(50);
 
   if (error) return c.json({ error: error.message }, 500);
   return c.json((data ?? []).map(rowToAlbum));
@@ -81,19 +73,19 @@ discoveryRoutes.get("/genres", async (c) => {
     .order("genre", { ascending: true });
 
   if (error) return c.json({ error: error.message }, 500);
-  const genres = [...new Set((data ?? [])
-    .map((row: any) => row.genre)
-    .filter((genre: unknown): genre is string => typeof genre === "string" && genre.length > 0))];
+  const genres = [
+    ...new Set(
+      (data ?? [])
+        .map((row: any) => row.genre)
+        .filter((genre: unknown): genre is string => typeof genre === "string" && genre.length > 0),
+    ),
+  ];
   return c.json(genres);
 });
 
 discoveryRoutes.get("/genres/:genre/songs", async (c) => {
   const genre = c.req.param("genre");
-  const { data, error } = await getSupabase(c.env)
-    .from("songs")
-    .select("*")
-    .ilike("genre", likeExact(genre))
-    .limit(50);
+  const { data, error } = await getSupabase(c.env).from("songs").select("*").ilike("genre", likeExact(genre)).limit(50);
 
   if (error) return c.json({ error: error.message }, 500);
   return c.json((data ?? []).map(rowToSong));
@@ -141,7 +133,10 @@ discoveryRoutes.get("/recommendations", async (c) => {
   const supabase = getSupabase(c.env);
   const basedOnId = c.req.query("basedOn");
   try {
-    const [signals, catalog] = await Promise.all([loadTasteSignals(supabase, c.get("auth").uid), fetchCatalog(supabase)]);
+    const [signals, catalog] = await Promise.all([
+      loadTasteSignals(supabase, c.get("auth").uid),
+      fetchCatalog(supabase),
+    ]);
     const seed = basedOnId ? catalog.find((item) => item.song.id === basedOnId) : undefined;
     const effectiveSignals = seed
       ? { ...signals, likedSongIds: [seed.song.id], historySongIds: [], followedArtistIds: [], followedArtistNames: {} }

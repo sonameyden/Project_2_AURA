@@ -4,10 +4,26 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { ActionButton, AuraText, Card, ErrorMessage, Heading, Page, SegmentedRow, SwitchRow, showAlert } from '@/components/ui';
+import {
+  ActionButton,
+  AuraText,
+  Card,
+  ErrorMessage,
+  Heading,
+  Page,
+  SegmentedRow,
+  SwitchRow,
+  showAlert,
+} from '@/components/ui';
 import { auraApi } from '@/core/api';
 import { useAuth } from '@/core/auth-context';
-import { useSettings, type AppSettings, type CrossfadeLength, type TextSize, type VisualIntensity } from '@/core/settings';
+import {
+  useSettings,
+  type AppSettings,
+  type CrossfadeLength,
+  type TextSize,
+  type VisualIntensity,
+} from '@/core/settings';
 import { useAuraTheme } from '@/core/theme';
 import { useUserProfile } from '@/hooks/use-user-profile';
 
@@ -75,7 +91,10 @@ export default function SettingsScreenFeature() {
   return (
     <Page style={{ gap: 24 }}>
       <Heading title="Settings" />
-      <Card onPress={() => router.push('/profile')} accessibilityLabel="View and edit profile" style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <Card
+        onPress={() => router.push('/profile')}
+        accessibilityLabel="View and edit profile"
+        style={{ flexDirection: 'row', alignItems: 'center' }}>
         {imageUri ? (
           <Image
             source={{ uri: imageUri }}
@@ -125,11 +144,7 @@ export default function SettingsScreenFeature() {
           options={intensityOptions}
           onChange={(value) => save('visualIntensity', value)}
         />
-        <SwitchRow
-          label="Show companion cat"
-          value={settings.showCat}
-          onChange={(value) => save('showCat', value)}
-        />
+        <SwitchRow label="Show companion cat" value={settings.showCat} onChange={(value) => save('showCat', value)} />
       </SettingsSection>
 
       <SettingsSection title="Accessibility" icon="accessibility">

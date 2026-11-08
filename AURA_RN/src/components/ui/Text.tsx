@@ -42,7 +42,9 @@ function colorAtPosition(colors: string[], position: number) {
   const channel = (offset: number) => {
     const from = Number.parseInt(start.slice(offset, offset + 2), 16);
     const to = Number.parseInt(end.slice(offset, offset + 2), 16);
-    return Math.round(from + (to - from) * amount).toString(16).padStart(2, '0');
+    return Math.round(from + (to - from) * amount)
+      .toString(16)
+      .padStart(2, '0');
   };
   return `#${channel(1)}${channel(3)}${channel(5)}`;
 }

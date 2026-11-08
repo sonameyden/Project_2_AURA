@@ -42,7 +42,7 @@ export default function SearchScreenFeature() {
   const { record, remove } = useSearchHistoryMutations();
 
   const trimmed = query.trim();
-  const results = trimmed ? search.data ?? emptySearchResults : emptySearchResults;
+  const results = trimmed ? (search.data ?? emptySearchResults) : emptySearchResults;
   const vibeResults = trimmed && vibe.data?.isDescriptive ? vibe.data.results : [];
   const error = search.error instanceof Error ? search.error.message : null;
   const vibeError = vibe.error instanceof Error ? vibe.error.message : null;
@@ -93,7 +93,12 @@ export default function SearchScreenFeature() {
                   onPress={() => setQuery(example)}
                   accessibilityRole="button"
                   accessibilityLabel={`Search for ${example}`}
-                  style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, backgroundColor: colors.accentSoft }}>
+                  style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderRadius: 16,
+                    backgroundColor: colors.accentSoft,
+                  }}>
                   <AuraText style={{ fontSize: 12, color: colors.text }}>{example}</AuraText>
                 </Pressable>
               ))}
@@ -123,18 +128,27 @@ export default function SearchScreenFeature() {
               <TrackRow
                 song={song}
                 active={playing?.id === song.id}
-                onPress={() => playFrom(song, vibeResults.map((item) => item.song))}
+                onPress={() =>
+                  playFrom(
+                    song,
+                    vibeResults.map((item) => item.song),
+                  )
+                }
                 onArtistPress={() => router.push({ pathname: '/artist/[id]', params: { id: song.artistId } })}
                 onMore={() => openAddToPlaylist(song)}
               />
               {reason ? (
-                <AuraText style={{ color: colors.muted, fontSize: 11, marginLeft: 64, marginTop: -2 }}>{reason}</AuraText>
+                <AuraText style={{ color: colors.muted, fontSize: 11, marginLeft: 64, marginTop: -2 }}>
+                  {reason}
+                </AuraText>
               ) : null}
             </View>
           ))}
         </View>
       ) : null}
-      {vibeError && trimmed ? <ErrorMessage message={`Mood search: ${vibeError}`} onRetry={() => void vibe.refetch()} /> : null}
+      {vibeError && trimmed ? (
+        <ErrorMessage message={`Mood search: ${vibeError}`} onRetry={() => void vibe.refetch()} />
+      ) : null}
 
       {results.songs.length > 0 ? (
         <View style={{ gap: 8 }}>

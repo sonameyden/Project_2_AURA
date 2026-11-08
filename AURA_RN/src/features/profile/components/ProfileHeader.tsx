@@ -63,11 +63,23 @@ export function ProfileHeader({
         <View style={{ marginBottom: 8 }}>{avatar}</View>
       )}
 
-      <GradientText style={{ fontSize: 26, lineHeight: 34, fontWeight: '800', textAlign: 'center' }}>{name}</GradientText>
-      {subtitle ? <AuraText style={{ color: colors.muted, fontSize: 13, textAlign: 'center' }}>{subtitle}</AuraText> : null}
+      <GradientText style={{ fontSize: 26, lineHeight: 34, fontWeight: '800', textAlign: 'center' }}>
+        {name}
+      </GradientText>
+      {subtitle ? (
+        <AuraText style={{ color: colors.muted, fontSize: 13, textAlign: 'center' }}>{subtitle}</AuraText>
+      ) : null}
 
       {bio ? (
-        <AuraText style={{ color: colors.text, fontSize: 15, lineHeight: 22, textAlign: 'center', marginTop: 8, maxWidth: 420 }}>
+        <AuraText
+          style={{
+            color: colors.text,
+            fontSize: 15,
+            lineHeight: 22,
+            textAlign: 'center',
+            marginTop: 8,
+            maxWidth: 420,
+          }}>
           {bio}
         </AuraText>
       ) : emptyBio ? (

@@ -17,14 +17,20 @@ const base = sanitizeAtmosphereProfile(
     catBehavior: "Idle",
     transitionStyle: "Gentle",
   },
-  "song-1"
+  "song-1",
 );
 
 describe("sanitizeAtmosphereProfile", () => {
   it("replaces illegal enum values and colours with safe defaults", () => {
     const profile = sanitizeAtmosphereProfile(
-      { environment: "Space", catBehavior: "Dancing", primaryColorHex: "blue", energy: 7, resonantLyricLineIds: ["1", "2"] },
-      "x"
+      {
+        environment: "Space",
+        catBehavior: "Dancing",
+        primaryColorHex: "blue",
+        energy: 7,
+        resonantLyricLineIds: ["1", "2"],
+      },
+      "x",
     );
     expect(profile.environment).toBe("Dream");
     // The top-level cat stays in the Kotlin app's enum.
@@ -45,13 +51,31 @@ describe("section timelines", () => {
   });
 
   it("detects the chorus from repeated lyric lines", () => {
-    const verse = (n: number, at: number): LyricLine => ({ id: `v${n}`, text: `verse line ${n}`, startTimeMs: at, endTimeMs: at + 4_000 });
-    const chorus = (n: number, at: number): LyricLine => ({ id: `c${n}`, text: `we rise again ${n % 2}`, startTimeMs: at, endTimeMs: at + 4_000 });
+    const verse = (n: number, at: number): LyricLine => ({
+      id: `v${n}`,
+      text: `verse line ${n}`,
+      startTimeMs: at,
+      endTimeMs: at + 4_000,
+    });
+    const chorus = (n: number, at: number): LyricLine => ({
+      id: `c${n}`,
+      text: `we rise again ${n % 2}`,
+      startTimeMs: at,
+      endTimeMs: at + 4_000,
+    });
     const lyrics = [
-      verse(1, 10_000), verse(2, 14_000), verse(3, 18_000),
-      chorus(1, 22_000), chorus(2, 26_000), chorus(3, 30_000),
-      verse(4, 34_000), verse(5, 38_000), verse(6, 42_000),
-      chorus(4, 46_000), chorus(5, 50_000), chorus(6, 54_000),
+      verse(1, 10_000),
+      verse(2, 14_000),
+      verse(3, 18_000),
+      chorus(1, 22_000),
+      chorus(2, 26_000),
+      chorus(3, 30_000),
+      verse(4, 34_000),
+      verse(5, 38_000),
+      verse(6, 42_000),
+      chorus(4, 46_000),
+      chorus(5, 50_000),
+      chorus(6, 54_000),
     ];
     const sections = estimateStructure(80_000, lyrics).map((span) => span.section);
     expect(sections[0]).toBe("Intro");
@@ -72,14 +96,20 @@ describe("section timelines", () => {
     const valid = validateTimeline(
       {
         sections: [
-          { section: "Chorus", startTimeMs: 60_000, environment: "Ocean", catBehavior: "Dancing", primaryColorHex: "#112233" },
+          {
+            section: "Chorus",
+            startTimeMs: 60_000,
+            environment: "Ocean",
+            catBehavior: "Dancing",
+            primaryColorHex: "#112233",
+          },
           { section: "Intro", startTimeMs: 500, environment: "Nowhere", primaryColorHex: "red" },
           { section: "Verse", startTimeMs: 20_000 },
           { section: "Outro", startTimeMs: 999_999 },
         ],
       },
       base,
-      200_000
+      200_000,
     )!;
     expect(valid.map((section) => section.section)).toEqual(["Intro", "Verse", "Chorus"]);
     expect(valid[0].startTimeMs).toBe(0);

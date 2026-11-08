@@ -88,7 +88,9 @@ export function PlaylistSharePanel({ playlist }: { playlist: PlaylistDetail }) {
               return (
                 <View key={person.userId} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <Artwork uri={person.imageUrl} size={36} rounded={18} />
-                  <AuraText numberOfLines={1} style={{ flex: 1 }}>{name}</AuraText>
+                  <AuraText numberOfLines={1} style={{ flex: 1 }}>
+                    {name}
+                  </AuraText>
                   <Pressable
                     onPress={() =>
                       changeRole.mutate(
@@ -98,7 +100,12 @@ export function PlaylistSharePanel({ playlist }: { playlist: PlaylistDetail }) {
                     }
                     accessibilityRole="button"
                     accessibilityLabel={`${name} is ${isEditor ? 'an editor' : 'a viewer'}. Tap to make them ${isEditor ? 'a viewer' : 'an editor'}.`}
-                    style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, backgroundColor: colors.accentSoft }}>
+                    style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 6,
+                      borderRadius: 12,
+                      backgroundColor: colors.accentSoft,
+                    }}>
                     <AuraText style={{ fontSize: 12, fontWeight: '700' }}>{isEditor ? 'Editor' : 'Viewer'}</AuraText>
                   </Pressable>
                   <Pressable

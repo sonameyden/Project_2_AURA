@@ -1,12 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import * as SecureStore from 'expo-secure-store';
-import {
-  getAuth,
-  getReactNativePersistence,
-  initializeAuth,
-  type Auth,
-} from '@firebase/auth';
+import { getAuth, getReactNativePersistence, initializeAuth, type Auth } from '@firebase/auth';
 
 import { firebaseConfig, hasFirebaseConfig } from './config';
 
@@ -32,13 +27,9 @@ const secureAuthStorage = {
     await AsyncStorage.removeItem(key);
     return legacyValue;
   },
-  setItem: (key: string, value: string) =>
-    SecureStore.setItemAsync(secureStoreKey(key), value),
+  setItem: (key: string, value: string) => SecureStore.setItemAsync(secureStoreKey(key), value),
   removeItem: async (key: string) => {
-    await Promise.all([
-      SecureStore.deleteItemAsync(secureStoreKey(key)),
-      AsyncStorage.removeItem(key),
-    ]);
+    await Promise.all([SecureStore.deleteItemAsync(secureStoreKey(key)), AsyncStorage.removeItem(key)]);
   },
 };
 
@@ -57,12 +48,7 @@ if (hasFirebaseConfig) {
 }
 
 function isAlreadyInitialized(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    error.code === 'auth/already-initialized'
-  );
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === 'auth/already-initialized';
 }
 
 export { firebaseAuth };

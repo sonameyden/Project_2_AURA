@@ -45,7 +45,12 @@ export function usePlaylistDetail(id: string | undefined) {
       // Older backends return the playlist without songs.
       if (!Array.isArray(detail.songs)) {
         const songs = await Promise.all(detail.songIds.map((songId) => auraApi.song(token, songId)));
-        return { ...detail, songs, role: detail.role ?? (detail.ownerId === user?.uid ? 'owner' : 'viewer'), collaborators: [] };
+        return {
+          ...detail,
+          songs,
+          role: detail.role ?? (detail.ownerId === user?.uid ? 'owner' : 'viewer'),
+          collaborators: [],
+        };
       }
       return detail;
     },
@@ -68,7 +73,9 @@ type PlaylistCache = {
 
 /** Replaces one playlist's row in the cached list with the server's newer copy. */
 const replaceInList = (cache: PlaylistCache, playlist: PlaylistSummary | PlaylistDetail) =>
-  cache.updateList((list) => list.map((item) => (item.id === playlist.id ? { ...item, ...toSummary(playlist) } : item)));
+  cache.updateList((list) =>
+    list.map((item) => (item.id === playlist.id ? { ...item, ...toSummary(playlist) } : item)),
+  );
 
 /**
  * Runs a playlist change, then writes the server's answer straight into the
@@ -92,16 +99,21 @@ function usePlaylistMutation<TVariables, TResult>(
       const detailKey = (playlistId: string) => ['library', 'playlist', playlistId, uid];
       const cache: PlaylistCache = {
         updateList: (change) =>
-          queryClient.setQueryData<PlaylistSummary[]>(['library', 'playlists', uid], (list) => (list ? change(list) : list)),
+          queryClient.setQueryData<PlaylistSummary[]>(['library', 'playlists', uid], (list) =>
+            list ? change(list) : list,
+          ),
         updateDetail: (playlistId, change) =>
-          queryClient.setQueryData<PlaylistDetail>(detailKey(playlistId), (detail) => (detail ? change(detail) : detail)),
+          queryClient.setQueryData<PlaylistDetail>(detailKey(playlistId), (detail) =>
+            detail ? change(detail) : detail,
+          ),
         setDetail: (detail) => queryClient.setQueryData(detailKey(detail.id), detail),
         removeDetail: (playlistId) => queryClient.removeQueries({ queryKey: ['library', 'playlist', playlistId] }),
       };
       writeCache?.(cache, result, variables);
 
       void queryClient.invalidateQueries({ queryKey: ['library', 'playlists'] });
-      if (playlistIdOf) void queryClient.invalidateQueries({ queryKey: ['library', 'playlist', playlistIdOf(variables)] });
+      if (playlistIdOf)
+        void queryClient.invalidateQueries({ queryKey: ['library', 'playlist', playlistIdOf(variables)] });
     },
   });
 }
@@ -115,7 +127,8 @@ const writeDetail = (cache: PlaylistCache, detail: PlaylistDetail) => {
 
 export const useCreatePlaylist = () =>
   usePlaylistMutation((token, title: string) => auraApi.createPlaylist(token, title), {
-    writeCache: (cache, created) => cache.updateList((list) => [created, ...list.filter((item) => item.id !== created.id)]),
+    writeCache: (cache, created) =>
+      cache.updateList((list) => [created, ...list.filter((item) => item.id !== created.id)]),
   });
 
 export const useDeletePlaylist = () =>

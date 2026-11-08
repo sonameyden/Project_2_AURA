@@ -12,7 +12,7 @@ import {
   ErrorMessage,
   Heading,
   LoadingState,
-  Page,
+  PageList,
   TrackRow,
   showAlert,
 } from '@/components/ui';
@@ -68,7 +68,8 @@ export default function AlbumDetailScreenFeature() {
     }
   };
 
-  const addSong = (song: Song) => run((token) => auraApi.addSongToAlbum(token, id, song.id), 'Song could not be added.');
+  const addSong = (song: Song) =>
+    run((token) => auraApi.addSongToAlbum(token, id, song.id), 'Song could not be added.');
   const removeSong = (song: Song) =>
     run((token) => auraApi.removeSongFromAlbum(token, id, song.id), 'Song could not be removed.');
   const changeArtwork = async () => {
@@ -89,7 +90,10 @@ export default function AlbumDetailScreenFeature() {
             .then(() => refreshCatalog())
             .then(() => router.back())
             .catch((deleteError: unknown) =>
-              showAlert('Could not delete album', deleteError instanceof Error ? deleteError.message : 'Please try again.'),
+              showAlert(
+                'Could not delete album',
+                deleteError instanceof Error ? deleteError.message : 'Please try again.',
+              ),
             )
             .finally(() => setWorking(false));
         },
@@ -105,43 +109,58 @@ export default function AlbumDetailScreenFeature() {
   };
 
   return (
-    <Page>
-      <BackButton />
-      {error ? <ErrorMessage message={error} onRetry={() => void albumQuery.refetch()} /> : null}
-      {albumQuery.isPending ? <LoadingState label="Loading album…" /> : null}
-      <View style={{ alignItems: 'center', gap: 12 }}>
-        <Pressable
-          onPress={() => void changeArtwork()}
-          disabled={!isOwner || working}
-          accessibilityRole={isOwner ? 'button' : 'image'}
-          accessibilityLabel={isOwner ? 'Change album artwork' : `${album?.title ?? 'Album'} artwork`}>
-          <Artwork uri={album?.artworkUrl ?? null} size={180} rounded={24} />
+    <PageList
+      data={songs}
+      keyExtractor={(song) => song.id}
+      extraData={[playing?.id, isOwner, working]}
+      header={
+        <>
+          <BackButton />
+          {error ? <ErrorMessage message={error} onRetry={() => void albumQuery.refetch()} /> : null}
+          {albumQuery.isPending ? <LoadingState label="Loading album…" /> : null}
+          <View style={{ alignItems: 'center', gap: 12 }}>
+            <Pressable
+              onPress={() => void changeArtwork()}
+              disabled={!isOwner || working}
+              accessibilityRole={isOwner ? 'button' : 'image'}
+              accessibilityLabel={isOwner ? 'Change album artwork' : `${album?.title ?? 'Album'} artwork`}>
+              <Artwork uri={album?.artworkUrl ?? null} size={180} rounded={24} />
+              {isOwner ? (
+                <View
+                  style={{
+                    position: 'absolute',
+                    right: 8,
+                    bottom: 8,
+                    borderRadius: 16,
+                    padding: 6,
+                    backgroundColor: colors.elevated,
+                  }}>
+                  <Ionicons name="camera-outline" size={18} color={colors.text} />
+                </View>
+              ) : null}
+            </Pressable>
+            <Heading
+              title={album?.title ?? 'Album'}
+              subtitle={`${isOwner ? 'Your album · ' : ''}${songs.length} ${songs.length === 1 ? 'track' : 'tracks'}`}
+            />
+            {songs.length ? (
+              <ActionButton
+                title={albumIsPlaying ? (isPlaying ? 'Pause' : 'Resume') : 'Play album'}
+                onPress={playAlbum}
+                style={{ minWidth: 160 }}
+              />
+            ) : null}
+          </View>
           {isOwner ? (
-            <View style={{ position: 'absolute', right: 8, bottom: 8, borderRadius: 16, padding: 6, backgroundColor: colors.elevated }}>
-              <Ionicons name="camera-outline" size={18} color={colors.text} />
-            </View>
+            <ActionButton
+              title="Upload a track to this album"
+              variant="secondary"
+              onPress={() => router.push({ pathname: '/upload', params: { albumId: id } })}
+            />
           ) : null}
-        </Pressable>
-        <Heading
-          title={album?.title ?? 'Album'}
-          subtitle={`${isOwner ? 'Your album · ' : ''}${songs.length} ${songs.length === 1 ? 'track' : 'tracks'}`}
-        />
-        {songs.length ? (
-          <ActionButton
-            title={albumIsPlaying ? (isPlaying ? 'Pause' : 'Resume') : 'Play album'}
-            onPress={playAlbum}
-            style={{ minWidth: 160 }}
-          />
-        ) : null}
-      </View>
-      {isOwner ? (
-        <ActionButton
-          title="Upload a track to this album"
-          variant="secondary"
-          onPress={() => router.push({ pathname: '/upload', params: { albumId: id } })}
-        />
-      ) : null}
-      {songs.map((song) => (
+        </>
+      }
+      renderItem={({ item: song }) => (
         <TrackRow
           key={song.id}
           song={song}
@@ -161,27 +180,31 @@ export default function AlbumDetailScreenFeature() {
             ) : undefined
           }
         />
-      ))}
-      {isOwner && availableSongs.length ? (
-        <View style={{ gap: 10 }}>
-          <AuraText style={{ fontSize: 17, fontWeight: '800' }}>Add an existing song</AuraText>
-          {availableSongs.map((song) => (
-            <Card
-              key={song.id}
-              onPress={working ? undefined : () => void addSong(song)}
-              accessibilityLabel={`Add ${song.title} to album`}
-              style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <AuraText style={{ flex: 1 }}>{song.title}</AuraText>
-              <Ionicons name="add-circle-outline" color={colors.accent} size={21} />
-            </Card>
-          ))}
-        </View>
-      ) : null}
-      {isOwner ? (
-        <Pressable onPress={deleteAlbum} disabled={working} accessibilityRole="button">
-          <AuraText style={{ color: colors.danger, textAlign: 'center' }}>Delete album</AuraText>
-        </Pressable>
-      ) : null}
-    </Page>
+      )}
+      footer={
+        <>
+          {isOwner && availableSongs.length ? (
+            <View style={{ gap: 10 }}>
+              <AuraText style={{ fontSize: 17, fontWeight: '800' }}>Add an existing song</AuraText>
+              {availableSongs.map((song) => (
+                <Card
+                  key={song.id}
+                  onPress={working ? undefined : () => void addSong(song)}
+                  accessibilityLabel={`Add ${song.title} to album`}
+                  style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <AuraText style={{ flex: 1 }}>{song.title}</AuraText>
+                  <Ionicons name="add-circle-outline" color={colors.accent} size={21} />
+                </Card>
+              ))}
+            </View>
+          ) : null}
+          {isOwner ? (
+            <Pressable onPress={deleteAlbum} disabled={working} accessibilityRole="button">
+              <AuraText style={{ color: colors.danger, textAlign: 'center' }}>Delete album</AuraText>
+            </Pressable>
+          ) : null}
+        </>
+      }
+    />
   );
 }

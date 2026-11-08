@@ -1,7 +1,17 @@
 import { useRouter } from 'expo-router';
 import { FlatList, View } from 'react-native';
 
-import { BackButton, AuraText, EmptyState, ErrorMessage, Heading, LoadingState, Page, TrackRow, showAlert } from '@/components/ui';
+import {
+  BackButton,
+  AuraText,
+  EmptyState,
+  ErrorMessage,
+  Heading,
+  LoadingState,
+  Page,
+  TrackRow,
+  showAlert,
+} from '@/components/ui';
 import { auraApi } from '@/core/api';
 import { usePlayer } from '@/core/player';
 import { useAuraTheme } from '@/core/theme';
@@ -35,7 +45,9 @@ export function SongListScreen({ kind }: { kind: 'liked' | 'history' }) {
           <View style={{ gap: 20, marginBottom: 12 }}>
             <Heading
               title={kind === 'liked' ? 'Liked Songs' : 'Listening History'}
-              subtitle={kind === 'liked' ? 'The songs you want to keep close.' : 'Your recent listening, all in one place.'}
+              subtitle={
+                kind === 'liked' ? 'The songs you want to keep close.' : 'Your recent listening, all in one place.'
+              }
             />
             {error ? <ErrorMessage message={error} onRetry={() => void songsQuery.refetch()} /> : null}
             {songsQuery.isPending ? <LoadingState label="Loading songs…" /> : null}

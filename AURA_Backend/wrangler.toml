@@ -14,3 +14,18 @@ compatibility_flags = ["nodejs_compat"]
 # for local dev and use `wrangler secret put <NAME>` for production.
 [vars]
 ENVIRONMENT = "development"
+# Optional: browser origins allowed by CORS, comma-separated (defaults to the local Expo web
+# dev servers outside production). The phone app doesn't use CORS.
+# ALLOWED_ORIGINS = "https://your-web-app.example.com"
+
+# Per-user rate limits (see src/lib/rateLimit.ts). namespace_id is any number unique in the account.
+[[ratelimits]]
+name = "API_RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 120, period = 60 }
+
+# Tighter limit for endpoints that call OpenAI (natural-language search, mood input).
+[[ratelimits]]
+name = "AI_RATE_LIMITER"
+namespace_id = "1002"
+simple = { limit = 20, period = 60 }

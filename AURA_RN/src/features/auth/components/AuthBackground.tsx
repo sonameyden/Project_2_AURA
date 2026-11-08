@@ -101,7 +101,11 @@ export function AuthBackground({ pulseKey = 0, busy = false }: AuthBackgroundPro
 
 function GradientBackground() {
   return (
-    <LinearGradient colors={['#171226', '#0C0D12', '#0C0D12']} locations={[0, 0.62, 1]} style={StyleSheet.absoluteFill} />
+    <LinearGradient
+      colors={['#171226', '#0C0D12', '#0C0D12']}
+      locations={[0, 0.62, 1]}
+      style={StyleSheet.absoluteFill}
+    />
   );
 }
 

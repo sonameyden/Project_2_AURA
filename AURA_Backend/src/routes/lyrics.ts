@@ -14,11 +14,7 @@ lyricsRoutes.get("/:songId", async (c) => {
   const songId = c.req.param("songId");
   const supabase = getSupabase(c.env);
 
-  const { data: cached } = await supabase
-    .from("lyrics_cache")
-    .select("lyrics_json")
-    .eq("song_id", songId)
-    .single();
+  const { data: cached } = await supabase.from("lyrics_cache").select("lyrics_json").eq("song_id", songId).single();
 
   if (cached?.lyrics_json) {
     const response: LyricsResponse = { songId, lines: cached.lyrics_json };

@@ -11,11 +11,7 @@ interface LrcLibTrack {
 }
 
 /** Fetches synchronized lyrics from LRCLIB, with search and plain-text fallbacks. */
-export async function fetchLyrics(
-  title: string,
-  artist: string,
-  durationMs: number
-): Promise<LyricLine[] | null> {
+export async function fetchLyrics(title: string, artist: string, durationMs: number): Promise<LyricLine[] | null> {
   const durationSeconds = Math.max(1, Math.round(durationMs / 1000));
   const headers = { "User-Agent": LRCLIB_USER_AGENT };
   const exactParams = new URLSearchParams({
@@ -25,9 +21,7 @@ export async function fetchLyrics(
   });
 
   const exactResponse = await fetch(`https://lrclib.net/api/get?${exactParams}`, { headers });
-  let track: LrcLibTrack | null = exactResponse.ok
-    ? await exactResponse.json<LrcLibTrack>()
-    : null;
+  let track: LrcLibTrack | null = exactResponse.ok ? await exactResponse.json<LrcLibTrack>() : null;
 
   if (!track) {
     const searchParams = new URLSearchParams({ track_name: title, artist_name: artist });
@@ -54,7 +48,12 @@ function parseSyncedLyrics(value: string, durationMs: number): LyricLine[] {
     const minutes = Number(match[1]);
     const seconds = Number(match[2]);
     const fraction = match[3] ?? "0";
-    const fractionMs = fraction.length === 1 ? Number(fraction) * 100 : fraction.length === 2 ? Number(fraction) * 10 : Number(fraction.slice(0, 3));
+    const fractionMs =
+      fraction.length === 1
+        ? Number(fraction) * 100
+        : fraction.length === 2
+          ? Number(fraction) * 10
+          : Number(fraction.slice(0, 3));
     const text = match[4].trim();
     if (text) entries.push({ startTimeMs: minutes * 60_000 + seconds * 1_000 + fractionMs, text });
   }
@@ -68,7 +67,10 @@ function parseSyncedLyrics(value: string, durationMs: number): LyricLine[] {
 }
 
 function evenlySpaceLyrics(value: string, durationMs: number): LyricLine[] {
-  const lines = value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const lines = value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
   const msPerLine = lines.length > 0 ? durationMs / lines.length : 0;
   return lines.map((text, index) => ({
     id: `${index}`,

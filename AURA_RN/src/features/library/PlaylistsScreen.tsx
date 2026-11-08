@@ -3,7 +3,20 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { BackButton, ActionButton, AuraText, Card, EmptyState, ErrorMessage, Field, Heading, LoadingState, Page, useToast, showAlert } from '@/components/ui';
+import {
+  BackButton,
+  ActionButton,
+  AuraText,
+  Card,
+  EmptyState,
+  ErrorMessage,
+  Field,
+  Heading,
+  LoadingState,
+  PageList,
+  useToast,
+  showAlert,
+} from '@/components/ui';
 import { useAuraTheme } from '@/core/theme';
 import type { PlaylistSummary } from '@/core/types';
 
@@ -49,29 +62,35 @@ export default function PlaylistsScreenFeature() {
     ]);
 
   return (
-    <Page>
-      <BackButton />
-      <Heading title="Playlists" subtitle="Gather songs around a feeling, a moment, or a place." />
-      <Card>
-        <AuraText style={{ fontSize: 17, fontWeight: '800' }}>Create a playlist</AuraText>
-        <Field
-          value={title}
-          onChangeText={setTitle}
-          placeholder="Give it a name"
-          accessibilityLabel="Playlist name"
-          maxLength={80}
-          returnKeyType="done"
-          onSubmitEditing={create}
-        />
-        <ActionButton title="Create playlist" onPress={create} loading={createPlaylist.isPending} />
-      </Card>
-      {loadError ? <ErrorMessage message={loadError} onRetry={() => void playlistsQuery.refetch()} /> : null}
-      {createError ? <ErrorMessage message={createError} /> : null}
-      {playlistsQuery.isPending ? <LoadingState label="Loading playlists…" /> : null}
-      {!playlistsQuery.isPending && !loadError && playlists.length === 0 ? (
-        <EmptyState title="A blank canvas" description="Create your first playlist above." icon="albums-outline" />
-      ) : null}
-      {playlists.map((playlist) => (
+    <PageList
+      data={playlists}
+      keyExtractor={(playlist) => playlist.id}
+      header={
+        <>
+          <BackButton />
+          <Heading title="Playlists" subtitle="Gather songs around a feeling, a moment, or a place." />
+          <Card>
+            <AuraText style={{ fontSize: 17, fontWeight: '800' }}>Create a playlist</AuraText>
+            <Field
+              value={title}
+              onChangeText={setTitle}
+              placeholder="Give it a name"
+              accessibilityLabel="Playlist name"
+              maxLength={80}
+              returnKeyType="done"
+              onSubmitEditing={create}
+            />
+            <ActionButton title="Create playlist" onPress={create} loading={createPlaylist.isPending} />
+          </Card>
+          {loadError ? <ErrorMessage message={loadError} onRetry={() => void playlistsQuery.refetch()} /> : null}
+          {createError ? <ErrorMessage message={createError} /> : null}
+          {playlistsQuery.isPending ? <LoadingState label="Loading playlists…" /> : null}
+          {!playlistsQuery.isPending && !loadError && playlists.length === 0 ? (
+            <EmptyState title="A blank canvas" description="Create your first playlist above." icon="albums-outline" />
+          ) : null}
+        </>
+      }
+      renderItem={({ item: playlist }) => (
         <Card
           key={playlist.id}
           onPress={() => router.push({ pathname: '/playlist/[id]', params: { id: playlist.id } })}
@@ -92,23 +111,27 @@ export default function PlaylistsScreenFeature() {
             <AuraText style={{ fontWeight: '700' }}>{playlist.title}</AuraText>
             <AuraText style={{ color: colors.muted, marginTop: 4, fontSize: 12 }}>
               {playlist.songIds.length} songs{playlist.isPublic ? ' · Public' : ''}
-              {playlist.role === 'editor' ? ' · Shared with you · Editor' : playlist.role === 'viewer' ? ' · Shared with you' : ''}
+              {playlist.role === 'editor'
+                ? ' · Shared with you · Editor'
+                : playlist.role === 'viewer'
+                  ? ' · Shared with you'
+                  : ''}
             </AuraText>
           </View>
           {playlist.role === 'owner' ? (
-          <Pressable
-            onPress={() => confirmDelete(playlist)}
-            disabled={deletePlaylist.isPending}
-            accessibilityRole="button"
-            accessibilityLabel={`Delete ${playlist.title}`}
-            hitSlop={10}
-            style={{ padding: 6 }}>
-            <Ionicons name="trash-outline" color={colors.muted} size={20} />
-          </Pressable>
+            <Pressable
+              onPress={() => confirmDelete(playlist)}
+              disabled={deletePlaylist.isPending}
+              accessibilityRole="button"
+              accessibilityLabel={`Delete ${playlist.title}`}
+              hitSlop={10}
+              style={{ padding: 6 }}>
+              <Ionicons name="trash-outline" color={colors.muted} size={20} />
+            </Pressable>
           ) : null}
           <Ionicons name="chevron-forward" color={colors.muted} size={18} />
         </Card>
-      ))}
-    </Page>
+      )}
+    />
   );
 }

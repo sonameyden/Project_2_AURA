@@ -28,6 +28,8 @@ export interface Recommendation {
   reason: string;
 }
 
+/** Below this many new songs, "Made for you" is topped up from the listener's history. */
+const MIN_RECOMMENDATIONS = 8;
 const LIKE_WEIGHT = 3;
 const PLAY_WEIGHT = 1;
 const FOLLOW_GENRE_WEIGHT = 2;
@@ -69,13 +71,15 @@ export function buildTasteProfile(signals: TasteSignals, catalog: SongFeatures[]
     const genre = item.song.genre.toLowerCase();
     genreWeights.set(genre, (genreWeights.get(genre) ?? 0) + FOLLOW_GENRE_WEIGHT / 4);
   }
-  for (const artistId of followed) artistWeights.set(artistId, (artistWeights.get(artistId) ?? 0) + FOLLOW_GENRE_WEIGHT);
+  for (const artistId of followed)
+    artistWeights.set(artistId, (artistWeights.get(artistId) ?? 0) + FOLLOW_GENRE_WEIGHT);
 
   const sortKeys = (map: Map<string, number>) => [...map.entries()].sort((a, b) => b[1] - a[1]).map(([key]) => key);
   const averageEnergy = energyWeight > 0 ? energySum / energyWeight : null;
   const averageValence = valenceWeight > 0 ? valenceSum / valenceWeight : null;
   const topGenres = sortKeys(genreWeights).slice(0, 5);
-  const feel = averageEnergy === null && averageValence === null ? "" : describeFeel(averageEnergy, averageValence).split(",")[0];
+  const feel =
+    averageEnergy === null && averageValence === null ? "" : describeFeel(averageEnergy, averageValence).split(",")[0];
   const label = topGenres[0] ? [feel === "matching feel" ? "" : feel, topGenres[0]].filter(Boolean).join(" ") : null;
 
   return {
@@ -113,7 +117,7 @@ export function recommend(
   const genreRank = new Map(profile.topGenres.map((genre, index) => [genre, index]));
   const artistRank = new Map(profile.topArtistIds.map((artistId, index) => [artistId, index]));
 
-  const scored = unheard.map((item): Recommendation => {
+  const scoreItem = (item: SongFeatures): Recommendation => {
     let score = 0;
     let reason = "";
     const genre = item.song.genre?.toLowerCase() ?? null;
@@ -128,9 +132,11 @@ export function recommend(
     }
     if (matchedGenre) {
       score += 3 - Math.min(2, (genreRank.get(matchedGenre) ?? 0) * 0.5);
-      if (!reason) reason = profile.label && profile.topGenres[0] === matchedGenre
-        ? `Because you like ${profile.label}`
-        : `Because you listen to ${matchedGenre}`;
+      if (!reason)
+        reason =
+          profile.label && profile.topGenres[0] === matchedGenre
+            ? `Because you like ${profile.label}`
+            : `Because you listen to ${matchedGenre}`;
     }
 
     let fit = 0;
@@ -146,20 +152,38 @@ export function recommend(
     if (parts > 0) {
       const average = fit / parts;
       score += average * 2;
-      if (!reason && average >= 0.8) reason = `Matches the ${describeFeel(item.energy, item.valence)} feel you've been playing`;
+      if (!reason && average >= 0.8)
+        reason = `Matches the ${describeFeel(item.energy, item.valence)} feel you've been playing`;
     }
     score += Math.min(0.5, item.playCount / 2000);
     return { song: item.song, score, reason: reason || "Something new to explore" };
-  });
+  };
 
   const perArtist = new Map<string, number>();
   const results: Recommendation[] = [];
-  for (const item of scored.sort((a, b) => b.score - a.score)) {
+  for (const item of unheard.map(scoreItem).sort((a, b) => b.score - a.score)) {
     const count = perArtist.get(item.song.artistId) ?? 0;
     if (count >= 2) continue;
     perArtist.set(item.song.artistId, count + 1);
     results.push(item);
     if (results.length >= limit) break;
+  }
+
+  // With a small catalogue, a regular listener soon has nothing left they haven't heard, and the
+  // section would come back empty. Top it up with songs from their history they haven't liked,
+  // ranked by the same taste score, so "Made for you" keeps working.
+  const target = Math.min(limit, MIN_RECOMMENDATIONS);
+  if (results.length < target) {
+    const liked = new Set(signals.likedSongIds);
+    const played = new Set(signals.historySongIds);
+    const rotation = catalog
+      .filter((item) => played.has(item.song.id) && !liked.has(item.song.id))
+      .map((item) => ({ ...scoreItem(item), reason: "Back in your rotation" }))
+      .sort((a, b) => b.score - a.score);
+    for (const item of rotation) {
+      results.push(item);
+      if (results.length >= target) break;
+    }
   }
   return results;
 }

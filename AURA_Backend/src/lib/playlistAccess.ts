@@ -29,7 +29,11 @@ async function loadPlaylist(supabase: SupabaseClient, playlistId: string): Promi
  * at least "viewer". If the collaborators table doesn't exist yet (migration
  * 003 not applied) only owners and public access work.
  */
-export async function roleFor(supabase: SupabaseClient, playlist: PlaylistRow, uid: string): Promise<PlaylistRole | null> {
+export async function roleFor(
+  supabase: SupabaseClient,
+  playlist: PlaylistRow,
+  uid: string,
+): Promise<PlaylistRole | null> {
   if (playlist.owner_id === uid) return "owner";
   const { data, error } = await supabase
     .from("playlist_collaborators")
@@ -37,7 +41,8 @@ export async function roleFor(supabase: SupabaseClient, playlist: PlaylistRow, u
     .eq("playlist_id", playlist.id)
     .eq("user_id", uid)
     .maybeSingle();
-  const collaboratorRole = !error && (data?.role === "editor" || data?.role === "viewer") ? (data.role as PlaylistRole) : null;
+  const collaboratorRole =
+    !error && (data?.role === "editor" || data?.role === "viewer") ? (data.role as PlaylistRole) : null;
   if (collaboratorRole) return collaboratorRole;
   return playlist.is_public === true ? "viewer" : null;
 }

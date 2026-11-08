@@ -1,11 +1,5 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import {
-  browserLocalPersistence,
-  getAuth,
-  indexedDBLocalPersistence,
-  initializeAuth,
-  type Auth,
-} from 'firebase/auth';
+import { browserLocalPersistence, getAuth, indexedDBLocalPersistence, initializeAuth, type Auth } from 'firebase/auth';
 
 import { firebaseConfig, hasFirebaseConfig } from './config';
 
@@ -24,12 +18,7 @@ if (hasFirebaseConfig) {
 }
 
 function isAlreadyInitialized(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    error.code === 'auth/already-initialized'
-  );
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === 'auth/already-initialized';
 }
 
 export { firebaseAuth };

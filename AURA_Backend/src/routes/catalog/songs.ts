@@ -55,17 +55,14 @@ songRoutes.post("/songs/upload", async (c) => {
   const extension = file.name.includes(".") ? file.name.split(".").pop() : "bin";
   const songId = crypto.randomUUID();
   const storagePath = `uploads/${auth.uid}/${songId}.${extension}`;
-  const artworkExtension = artwork instanceof File && artwork.name.includes(".")
-    ? artwork.name.split(".").pop()
-    : "bin";
+  const artworkExtension =
+    artwork instanceof File && artwork.name.includes(".") ? artwork.name.split(".").pop() : "bin";
   const artworkPath = `artwork/${auth.uid}/${songId}.${artworkExtension}`;
 
-  const { error: uploadError } = await supabase.storage
-    .from("audio")
-    .upload(storagePath, await file.arrayBuffer(), {
-      contentType: file.type,
-      upsert: false,
-    });
+  const { error: uploadError } = await supabase.storage.from("audio").upload(storagePath, await file.arrayBuffer(), {
+    contentType: file.type,
+    upsert: false,
+  });
   if (uploadError) return c.json({ error: uploadError.message }, 500);
 
   let artworkUrl: string | null = null;
@@ -167,12 +164,10 @@ songRoutes.post("/songs/:id/artwork", async (c) => {
 
   const extension = artwork.name.includes(".") ? artwork.name.split(".").pop() : "bin";
   const artworkPath = `artwork/${artistId}/${songId}.${extension}`;
-  const { error: uploadError } = await supabase.storage
-    .from("audio")
-    .upload(artworkPath, await artwork.arrayBuffer(), {
-      contentType: artwork.type,
-      upsert: true,
-    });
+  const { error: uploadError } = await supabase.storage.from("audio").upload(artworkPath, await artwork.arrayBuffer(), {
+    contentType: artwork.type,
+    upsert: true,
+  });
 
   if (uploadError) return c.json({ error: uploadError.message }, 500);
 
@@ -197,11 +192,7 @@ songRoutes.post("/songs/:id/artwork", async (c) => {
 
 songRoutes.get("/songs/artist/:artistId", async (c) => {
   const artistId = c.req.param("artistId");
-  const { data, error } = await getSupabase(c.env)
-    .from("songs")
-    .select("*")
-    .eq("artist_id", artistId)
-    .limit(50);
+  const { data, error } = await getSupabase(c.env).from("songs").select("*").eq("artist_id", artistId).limit(50);
 
   if (error) return c.json({ error: error.message }, 500);
   return c.json((data ?? []).map(rowToSong));
@@ -220,23 +211,13 @@ songRoutes.delete("/songs/:id", async (c) => {
 
   if (loadError || !song) return c.json({ error: "Song not found" }, 404);
 
-  const { error: atmosphereDeleteError } = await supabase
-    .from("atmosphere_profiles")
-    .delete()
-    .eq("song_id", songId);
+  const { error: atmosphereDeleteError } = await supabase.from("atmosphere_profiles").delete().eq("song_id", songId);
   if (atmosphereDeleteError) return c.json({ error: atmosphereDeleteError.message }, 500);
 
-  const { error: lyricsDeleteError } = await supabase
-    .from("lyrics_cache")
-    .delete()
-    .eq("song_id", songId);
+  const { error: lyricsDeleteError } = await supabase.from("lyrics_cache").delete().eq("song_id", songId);
   if (lyricsDeleteError) return c.json({ error: lyricsDeleteError.message }, 500);
 
-  const { error: deleteError } = await supabase
-    .from("songs")
-    .delete()
-    .eq("id", songId)
-    .eq("artist_id", artistId);
+  const { error: deleteError } = await supabase.from("songs").delete().eq("id", songId).eq("artist_id", artistId);
 
   if (deleteError) return c.json({ error: deleteError.message }, 500);
 

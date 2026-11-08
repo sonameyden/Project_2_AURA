@@ -33,7 +33,10 @@ export function shade(hex: string, amount: number): string {
   const channels = [(value >> 16) & 255, (value >> 8) & 255, value & 255].map((channel) =>
     Math.round(amount >= 0 ? channel + (255 - channel) * amount : channel * (1 + amount)),
   );
-  return `#${channels.map((channel) => channel.toString(16).padStart(2, "0")).join("").toUpperCase()}`;
+  return `#${channels
+    .map((channel) => channel.toString(16).padStart(2, "0"))
+    .join("")
+    .toUpperCase()}`;
 }
 
 function catFor(section: SongSection, profile: AtmosphereProfile): SectionCatBehavior {
@@ -108,11 +111,19 @@ export function estimateStructure(durationMs: number, lyrics: LyricLine[]): Span
   if (timed.length >= 8) {
     const counts = new Map<string, number>();
     for (const line of timed) {
-      const key = line.text.toLowerCase().replace(/[^a-z0-9 ]/g, "").trim();
+      const key = line.text
+        .toLowerCase()
+        .replace(/[^a-z0-9 ]/g, "")
+        .trim();
       if (key) counts.set(key, (counts.get(key) ?? 0) + 1);
     }
     const isRepeated = (line: LyricLine) =>
-      (counts.get(line.text.toLowerCase().replace(/[^a-z0-9 ]/g, "").trim()) ?? 0) >= 2;
+      (counts.get(
+        line.text
+          .toLowerCase()
+          .replace(/[^a-z0-9 ]/g, "")
+          .trim(),
+      ) ?? 0) >= 2;
 
     const spans: Span[] = [];
     const firstVocal = timed[0].startTimeMs;
@@ -133,8 +144,14 @@ export function estimateStructure(durationMs: number, lyrics: LyricLine[]): Span
   }
 
   const template: [SongSection, number][] = [
-    ["Intro", 0], ["Verse", 0.08], ["Chorus", 0.28], ["Verse", 0.42],
-    ["Chorus", 0.58], ["Bridge", 0.72], ["FinalChorus", 0.82], ["Outro", 0.94],
+    ["Intro", 0],
+    ["Verse", 0.08],
+    ["Chorus", 0.28],
+    ["Verse", 0.42],
+    ["Chorus", 0.58],
+    ["Bridge", 0.72],
+    ["FinalChorus", 0.82],
+    ["Outro", 0.94],
   ];
   return template.map(([section, at], index) => ({
     section,
@@ -175,7 +192,11 @@ function closeGaps(spans: Span[], duration: number): Span[] {
   }));
 }
 
-export function estimatedTimeline(profile: AtmosphereProfile, durationMs: number, lyrics: LyricLine[]): SongSectionProfile[] {
+export function estimatedTimeline(
+  profile: AtmosphereProfile,
+  durationMs: number,
+  lyrics: LyricLine[],
+): SongSectionProfile[] {
   const seen = new Map<SongSection, number>();
   return estimateStructure(durationMs, lyrics).map((span) => {
     const occurrence = seen.get(span.section) ?? 0;
@@ -189,7 +210,11 @@ export function estimatedTimeline(profile: AtmosphereProfile, durationMs: number
  * inside the song. Returns null if it is unusable, so the caller can fall
  * back to the estimate.
  */
-export function validateTimeline(raw: unknown, profile: AtmosphereProfile, durationMs: number): SongSectionProfile[] | null {
+export function validateTimeline(
+  raw: unknown,
+  profile: AtmosphereProfile,
+  durationMs: number,
+): SongSectionProfile[] | null {
   const list = Array.isArray(raw) ? raw : Array.isArray((raw as any)?.sections) ? (raw as any).sections : null;
   if (!list) return null;
 
@@ -206,7 +231,10 @@ export function validateTimeline(raw: unknown, profile: AtmosphereProfile, durat
       environment: pick(item?.environment, ENVIRONMENTS, profile.environment),
       primaryColorHex: primary,
       secondaryColorHexes: Array.isArray(item?.secondaryColorHexes)
-        ? item.secondaryColorHexes.map((hex: unknown) => hexOr(hex, "")).filter(Boolean).slice(0, 3)
+        ? item.secondaryColorHexes
+            .map((hex: unknown) => hexOr(hex, ""))
+            .filter(Boolean)
+            .slice(0, 3)
         : profile.secondaryColorHexes,
       lightingStyle: pick(item?.lightingStyle, LIGHTING, profile.lightingStyle),
       catBehavior: pick(item?.catBehavior, SECTION_CAT_STATES, profile.catBehavior),
@@ -215,7 +243,9 @@ export function validateTimeline(raw: unknown, profile: AtmosphereProfile, durat
   }
 
   sections.sort((a, b) => a.startTimeMs - b.startTimeMs);
-  const distinct = sections.filter((section, index) => index === 0 || section.startTimeMs - sections[index - 1].startTimeMs >= 3_000);
+  const distinct = sections.filter(
+    (section, index) => index === 0 || section.startTimeMs - sections[index - 1].startTimeMs >= 3_000,
+  );
   if (distinct.length < 3) return null;
   distinct[0].startTimeMs = 0;
   return distinct.map((section, index) => ({
