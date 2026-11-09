@@ -31,6 +31,8 @@ import { nativeSkiaAvailable, type SkiaModule } from '@/core/skia';
 import { useVisualTier } from '@/core/settings';
 import type { AtmosphereProfile } from '@/core/types';
 
+import { loopFromCurrent } from '../lib/seamless-loop';
+
 type KaleidoscopeStyle = AtmosphereProfile['kaleidoscopeStyle'];
 
 export type KaleidoscopeProps = {
@@ -853,15 +855,10 @@ function FallbackKaleidoscope({ atmosphere, playing, currentTime }: Kaleidoscope
       rotation.stopAnimation();
       return;
     }
-    const animation = Animated.loop(
-      Animated.timing(rotation, {
-        toValue: 1,
-        duration: Math.round((24000 - energy * 10000) / motion),
-        useNativeDriver: Platform.OS !== 'web',
-      }),
-    );
-    animation.start();
-    return () => animation.stop();
+    return loopFromCurrent(rotation, {
+      duration: Math.round((24000 - energy * 10000) / motion),
+      useNativeDriver: Platform.OS !== 'web',
+    });
   }, [energy, motion, playing, rotation]);
 
   const rotate = rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });

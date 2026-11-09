@@ -1,8 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 import {
   ActionButton,
@@ -15,7 +14,6 @@ import {
   SwitchRow,
   showAlert,
 } from '@/components/ui';
-import { auraApi } from '@/core/api';
 import { useAuth } from '@/core/auth-context';
 import {
   useSettings,
@@ -27,6 +25,7 @@ import {
 import { useAuraTheme } from '@/core/theme';
 import { useUserProfile } from '@/hooks/use-user-profile';
 
+import { DeleteAccountCard } from './components/DeleteAccountCard';
 import { SettingsSection } from './components/SettingsSection';
 
 const intensityOptions: { value: VisualIntensity; label: string }[] = [
@@ -53,8 +52,7 @@ export default function SettingsScreenFeature() {
   const router = useRouter();
   const { colors, mode, setMode } = useAuraTheme();
   const { settings, update } = useSettings();
-  const { user, getToken, logout } = useAuth();
-  const [working, setWorking] = useState(false);
+  const { user, logout } = useAuth();
   const profileQuery = useUserProfile();
 
   const save = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
@@ -62,29 +60,6 @@ export default function SettingsScreenFeature() {
       showAlert('Could not save setting', error instanceof Error ? error.message : 'Please try again.'),
     );
   };
-
-  const deleteAccount = () =>
-    showAlert(
-      'Delete your account?',
-      'This permanently removes your AURA account and library. This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete account',
-          style: 'destructive',
-          onPress: () => {
-            setWorking(true);
-            void getToken()
-              .then((token) => auraApi.deleteAccount(token))
-              .then(() => logout())
-              .catch((error: unknown) =>
-                showAlert('Could not delete account', error instanceof Error ? error.message : 'Please try again.'),
-              )
-              .finally(() => setWorking(false));
-          },
-        },
-      ],
-    );
 
   const imageUri = profileQuery.data?.imageUrl || user?.photoURL || null;
 
@@ -194,15 +169,7 @@ export default function SettingsScreenFeature() {
           );
         }}
       />
-      <Pressable
-        accessibilityRole="button"
-        disabled={working}
-        onPress={deleteAccount}
-        style={{ alignItems: 'center', paddingVertical: 8, opacity: working ? 0.6 : 1 }}>
-        <AuraText style={{ color: colors.danger, fontWeight: '600' }}>
-          {working ? 'Deleting account…' : 'Delete Account Permanently'}
-        </AuraText>
-      </Pressable>
+      <DeleteAccountCard />
     </Page>
   );
 }

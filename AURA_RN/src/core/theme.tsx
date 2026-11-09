@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated } from 'react-native';
 
 import { useSettings } from './settings';
@@ -111,8 +111,17 @@ export function AuraThemeProvider({ children }: { children: React.ReactNode }) {
     [mode],
   );
 
+  // Softens the switch between light and dark. Anything else (first load, the
+  // reduce-motion setting changing) snaps to full opacity, so an interrupted
+  // fade can never leave the whole app dimmed.
+  const shownMode = useRef(mode);
   useEffect(() => {
-    if (reducedMotion) return;
+    const modeChanged = shownMode.current !== mode;
+    shownMode.current = mode;
+    if (!modeChanged || reducedMotion) {
+      transitionOpacity.setValue(1);
+      return;
+    }
     transitionOpacity.setValue(0.88);
     const animation = Animated.timing(transitionOpacity, {
       toValue: 1,

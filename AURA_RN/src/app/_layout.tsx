@@ -106,9 +106,12 @@ function Navigation() {
         <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
         <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
         <Stack.Screen name="mood" options={{ presentation: 'modal' }} />
-        {/* Now Playing rises from the mini-player and slides back down when closed. */}
+        {/* Now Playing rises from the mini-player and slides back down when closed. There is only ever
+            one: opening it again (a song tapped twice while it loads, or the mini-player) reuses it
+            instead of stacking a second copy that needs a second Back. */}
         <Stack.Screen
           name="now-playing"
+          dangerouslySingular
           options={{ animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }}
         />
         <Stack.Screen name="artist/[id]" />

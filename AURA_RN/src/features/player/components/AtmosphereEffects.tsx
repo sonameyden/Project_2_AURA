@@ -1,11 +1,12 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
-import { Animated, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { useVisualTier } from '@/core/settings';
 import type { AtmosphereProfile } from '@/core/types';
 
+import { loopFromCurrent } from '../lib/seamless-loop';
 import { isHexColor as isColor } from '../lib/visual-utils';
 
 type EffectKind = 'leaf' | 'petal' | 'mote' | 'star' | 'bubble' | 'rain' | 'spark';
@@ -116,17 +117,11 @@ function AtmosphereParticle({
   // Reduced motion slows particles to a gentle drift instead of stopping them.
   const duration = Math.round(((kind === 'rain' ? 1700 : 6500) - energy * (kind === 'rain' ? 500 : 2400)) / motion);
 
-  useEffect(() => {
-    const animation = Animated.loop(
-      Animated.timing(progress, {
-        toValue: 1,
-        duration: playing ? duration : duration * 1.6,
-        useNativeDriver: true,
-      }),
-    );
-    animation.start();
-    return () => animation.stop();
-  }, [duration, playing, progress]);
+  useEffect(
+    () =>
+      loopFromCurrent(progress, { duration: playing ? duration : duration * 1.6, easing: Easing.inOut(Easing.ease) }),
+    [duration, playing, progress],
+  );
 
   const translateY = progress.interpolate({
     inputRange: [0, 1],
@@ -270,16 +265,11 @@ function EnergyRings({ color, energy, playing }: { color: string; energy: number
   const { motion } = useVisualTier();
 
   useEffect(() => {
-    const animation = Animated.loop(
-      Animated.timing(rotation, {
-        toValue: 1,
-        duration: Math.round((6000 - energy * 2000) / motion),
-        useNativeDriver: true,
-      }),
-    );
-    if (playing) animation.start();
-    else rotation.stopAnimation();
-    return () => animation.stop();
+    if (!playing) {
+      rotation.stopAnimation();
+      return;
+    }
+    return loopFromCurrent(rotation, { duration: Math.round((6000 - energy * 2000) / motion) });
   }, [energy, motion, playing, rotation]);
 
   const rotate = rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
