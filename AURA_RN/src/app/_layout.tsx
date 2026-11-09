@@ -8,7 +8,15 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { FadeInDown, FadeOutDown, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppErrorBoundary, AuraText, DialogHost, OfflineBanner, ToastProvider } from '@/components/ui';
+import {
+  AppErrorBoundary,
+  AuraText,
+  DialogHost,
+  MINI_PLAYER_SCREEN_GAP,
+  OfflineBanner,
+  setMiniPlayerHeight,
+  ToastProvider,
+} from '@/components/ui';
 import { AuthProvider, useAuth } from '@/core/auth-context';
 import { QueryCacheBoundary } from '@/core/query-cache-boundary';
 import { queryClient } from '@/core/query-client';
@@ -138,7 +146,12 @@ const routesWithoutMiniPlayer = new Set([
 /** Keeps the mini-player on every screen except auth, Now Playing and modals. */
 function GlobalMiniPlayer({ route }: { route: string | undefined }) {
   const insets = useSafeAreaInsets();
-  if (!route || routesWithoutMiniPlayer.has(route)) return null;
+  const hidden = !route || routesWithoutMiniPlayer.has(route);
+  // While hidden it takes no room, so pages don't keep empty space for it.
+  useEffect(() => {
+    if (hidden) setMiniPlayerHeight(0);
+  }, [hidden]);
+  if (hidden) return null;
   const aboveTabBar = route === '(tabs)';
   // Eases in after Now Playing has slid away (instead of popping over it), and glides
   // between its tab-bar and full-screen positions.
@@ -148,7 +161,14 @@ function GlobalMiniPlayer({ route }: { route: string | undefined }) {
       exiting={FadeOutDown.duration(160)}
       layout={LinearTransition.duration(200)}
       pointerEvents="box-none"
-      style={{ position: 'absolute', left: 0, right: 0, bottom: aboveTabBar ? 72 + insets.bottom : 8 + insets.bottom }}>
+      // Pages pad their content by this height so their last rows can scroll clear of the player (0 with no song).
+      onLayout={(event) => setMiniPlayerHeight(event.nativeEvent.layout.height)}
+      style={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: aboveTabBar ? 72 + insets.bottom : MINI_PLAYER_SCREEN_GAP + insets.bottom,
+      }}>
       <MiniPlayer />
     </Animated.View>
   );

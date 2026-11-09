@@ -13,6 +13,8 @@ import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
 import { useAuraTheme } from '@/core/theme';
 
+import { useBottomOverlap } from './bottom-space';
+
 export function Page({
   children,
   scroll = true,
@@ -25,12 +27,13 @@ export function Page({
   transparent?: boolean;
   safeAreaEdges?: Edge[];
 }>) {
+  const bottomPadding = useBottomPadding(style);
   const content = scroll ? (
     <ScrollView
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={[styles.pageContent, style]}>
+      contentContainerStyle={[styles.pageContent, style, { paddingBottom: bottomPadding }]}>
       {children}
     </ScrollView>
   ) : (
@@ -77,6 +80,7 @@ export function PageList<T>({
 }) {
   const gap = Number(style?.gap ?? styles.pageContent.gap);
   const rowGap = itemSpacing ?? gap;
+  const bottomPadding = useBottomPadding(style);
   return (
     <PageFrame transparent={transparent} safeAreaEdges={safeAreaEdges}>
       <FlatList
@@ -88,7 +92,7 @@ export function PageList<T>({
         keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
         // Spacing is applied explicitly (header, rows, footer) so rows can sit closer than sections.
-        contentContainerStyle={[styles.pageContent, style, { gap: 0 }]}
+        contentContainerStyle={[styles.pageContent, style, { gap: 0, paddingBottom: bottomPadding }]}
         ListHeaderComponent={
           header ? <View style={{ gap, marginBottom: data.length ? gap : 0 }}>{header}</View> : undefined
         }
@@ -97,6 +101,16 @@ export function PageList<T>({
       />
     </PageFrame>
   );
+}
+
+/**
+ * A page's own bottom padding plus room for the mini-player and navigation bar,
+ * so the last item can always scroll clear of them.
+ */
+function useBottomPadding(style?: ViewStyle) {
+  const overlap = useBottomOverlap();
+  const own = typeof style?.paddingBottom === 'number' ? style.paddingBottom : styles.pageContent.paddingBottom;
+  return own + overlap;
 }
 
 /** Safe area, background and keyboard handling shared by `Page` and `PageList`. */
@@ -161,7 +175,7 @@ function AmbientBackground({ light }: { light: boolean }) {
 
 const styles = StyleSheet.create({
   page: { flex: 1 },
-  // Bottom padding leaves room for the floating mini-player and tab bar.
-  pageContent: { paddingHorizontal: 22, paddingTop: 16, paddingBottom: 132, gap: 20 },
+  // Room for the mini-player and navigation bar is added on top of this (see useBottomPadding).
+  pageContent: { paddingHorizontal: 22, paddingTop: 16, paddingBottom: 28, gap: 20 },
   fill: { flex: 1 },
 });

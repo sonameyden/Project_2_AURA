@@ -1,5 +1,5 @@
 import * as DocumentPicker from 'expo-document-picker';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable } from 'react-native';
 
@@ -20,6 +20,7 @@ import { appendUploadFile, type SelectedUpload } from '@/core/native-upload';
 import { audioMime } from '@/core/audio-mime';
 import { IMAGE_MAX_SIZE, pickImageUpload } from '@/core/pick-image';
 import { useAuraTheme } from '@/core/theme';
+import { useGoBack } from '@/core/use-go-back';
 import { useRefreshCatalog } from '@/hooks/use-refresh-catalog';
 import { readAudioDuration } from '@/core/read-audio-duration';
 
@@ -29,7 +30,7 @@ const maximumAudioSize = 50 * 1024 * 1024;
 
 export default function UploadScreenFeature() {
   const { albumId } = useLocalSearchParams<{ albumId?: string }>();
-  const router = useRouter();
+  const goBack = useGoBack();
   const toast = useToast();
   const refreshCatalog = useRefreshCatalog();
   const { getToken } = useAuth();
@@ -108,7 +109,7 @@ export default function UploadScreenFeature() {
       // Refresh the artist page, album and Home before going back, so the new song is already there.
       await refreshCatalog().catch(() => undefined);
       toast.show({ title: 'Upload successful', message: `${title.trim()} is now in the AURA catalog.` });
-      router.back();
+      goBack();
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : 'Track upload failed.');
     } finally {

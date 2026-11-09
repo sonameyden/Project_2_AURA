@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { Pressable, type StyleProp, type ViewStyle } from 'react-native';
 
 import { useAuraTheme } from '@/core/theme';
+import { useGoBack } from '@/core/use-go-back';
 
 /**
  * The round back (or close) button at the top of pushed screens and pop-ups,
@@ -18,12 +18,12 @@ export function BackButton({
   variant?: 'back' | 'close';
   style?: StyleProp<ViewStyle>;
 }) {
-  const router = useRouter();
+  const goBack = useGoBack();
   const { colors, mode } = useAuraTheme();
 
   return (
     <Pressable
-      onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
+      onPress={goBack}
       accessibilityRole="button"
       accessibilityLabel={variant === 'close' ? 'Close' : 'Go back'}
       hitSlop={8}

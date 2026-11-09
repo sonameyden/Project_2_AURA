@@ -21,6 +21,7 @@ import { useAuraTheme } from '@/core/theme';
 import type { PlaylistSummary } from '@/core/types';
 
 import { useCreatePlaylist, useDeletePlaylist, usePlaylists } from './hooks/use-playlists';
+import { parseInviteCode } from './lib/invite-code';
 
 export default function PlaylistsScreenFeature() {
   const router = useRouter();
@@ -31,6 +32,7 @@ export default function PlaylistsScreenFeature() {
   const deletePlaylist = useDeletePlaylist();
   const playlists = playlistsQuery.data ?? [];
   const [title, setTitle] = useState('');
+  const [inviteLink, setInviteLink] = useState('');
   const loadError = playlistsQuery.error instanceof Error ? playlistsQuery.error.message : null;
   const createError = createPlaylist.error instanceof Error ? createPlaylist.error.message : null;
 
@@ -45,6 +47,21 @@ export default function PlaylistsScreenFeature() {
         toast.show({ title: `Created ${created.title}` });
       },
     });
+  };
+
+  // Opens the same invite screen a tapped link would, so joining works even where links can't open the app (Expo Go).
+  const joinWithInvite = () => {
+    const code = parseInviteCode(inviteLink);
+    if (!code) {
+      toast.show({
+        title: 'That is not an invite link',
+        message: 'Paste the whole link or message your friend shared.',
+        variant: 'error',
+      });
+      return;
+    }
+    setInviteLink('');
+    router.push({ pathname: '/invite/[code]', params: { code } });
   };
 
   const confirmDelete = (playlist: PlaylistSummary) =>
@@ -81,6 +98,28 @@ export default function PlaylistsScreenFeature() {
               onSubmitEditing={create}
             />
             <ActionButton title="Create playlist" onPress={create} loading={createPlaylist.isPending} />
+          </Card>
+          <Card>
+            <AuraText style={{ fontSize: 17, fontWeight: '800' }}>Join a shared playlist</AuraText>
+            <AuraText style={{ color: colors.muted, fontSize: 13 }}>
+              Got an invite? Paste the link or the whole message here.
+            </AuraText>
+            <Field
+              value={inviteLink}
+              onChangeText={setInviteLink}
+              placeholder="Paste invite link"
+              accessibilityLabel="Invite link"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="go"
+              onSubmitEditing={joinWithInvite}
+            />
+            <ActionButton
+              title="Join with invite link"
+              variant="secondary"
+              onPress={joinWithInvite}
+              disabled={!inviteLink.trim()}
+            />
           </Card>
           {loadError ? <ErrorMessage message={loadError} onRetry={() => void playlistsQuery.refetch()} /> : null}
           {createError ? <ErrorMessage message={createError} /> : null}

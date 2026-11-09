@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
 import { AuraText, ErrorMessage, Heading, LoadingState, Page } from '@/components/ui';
 import { useAuraTheme } from '@/core/theme';
+import { useGoBack } from '@/core/use-go-back';
 
 import { PlaylistSharePanel } from './components/PlaylistSharePanel';
 import { usePlaylistDetail } from './hooks/use-playlists';
@@ -15,7 +16,7 @@ import { usePlaylistDetail } from './hooks/use-playlists';
  */
 export default function PlaylistShareScreenFeature() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
+  const goBack = useGoBack();
   const { colors } = useAuraTheme();
   const playlistQuery = usePlaylistDetail(id);
   const playlist = playlistQuery.data;
@@ -26,7 +27,7 @@ export default function PlaylistShareScreenFeature() {
         <View style={{ flex: 1 }}>
           <Heading title="Share & collaborate" subtitle={playlist?.title} />
         </View>
-        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Close" hitSlop={12}>
+        <Pressable onPress={() => goBack()} accessibilityRole="button" accessibilityLabel="Close" hitSlop={12}>
           <Ionicons name="close" size={26} color={colors.text} />
         </Pressable>
       </View>

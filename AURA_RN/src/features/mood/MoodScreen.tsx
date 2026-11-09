@@ -9,6 +9,7 @@ import { auraApi } from '@/core/api';
 import { useAuth } from '@/core/auth-context';
 import { usePlayer } from '@/core/player';
 import { useAuraTheme } from '@/core/theme';
+import { useGoBack } from '@/core/use-go-back';
 import type { MoodResponse } from '@/core/types';
 import { useAuraQuery } from '@/core/use-aura-query';
 
@@ -16,6 +17,7 @@ const suggestions = ['Worry (Ultra Slowed)', 'Something hopeful', 'A quiet momen
 
 export default function MoodScreenFeature() {
   const router = useRouter();
+  const goBack = useGoBack();
   const { colors, mode } = useAuraTheme();
   const { getToken } = useAuth();
   const { playSong } = usePlayer();
@@ -53,7 +55,7 @@ export default function MoodScreenFeature() {
   return (
     <Page style={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: 16, gap: 0 }}>
       <Pressable
-        onPress={() => router.back()}
+        onPress={() => goBack()}
         accessibilityRole="button"
         accessibilityLabel="Go back"
         style={{

@@ -1,5 +1,6 @@
 export { ActionButton } from './ActionButton';
 export { BackButton } from './BackButton';
+export { MINI_PLAYER_SCREEN_GAP, setMiniPlayerHeight, TabScreens, useBottomOverlap } from './bottom-space';
 export { Artwork } from './Artwork';
 export { Card } from './Card';
 export { DialogHost, showAlert, type DialogButton } from './Dialog';

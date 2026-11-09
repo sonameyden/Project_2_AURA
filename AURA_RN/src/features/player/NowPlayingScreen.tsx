@@ -8,6 +8,7 @@ import { ActionButton, AuraText, ErrorMessage, Page, showAlert } from '@/compone
 import { usePlaybackProgress, usePlayer } from '@/core/player';
 import { useSettings } from '@/core/settings';
 import { useAuraTheme } from '@/core/theme';
+import { useGoBack } from '@/core/use-go-back';
 import { useLikedSongs, useToggleLike } from '@/hooks/use-liked-songs';
 import { CatCompanion } from './components/CatCompanion';
 import { KaleidoscopeLayer } from './components/KaleidoscopeLayer';
@@ -20,6 +21,7 @@ import { isHexColor } from './lib/visual-utils';
 
 export default function NowPlayingScreenFeature() {
   const router = useRouter();
+  const goBack = useGoBack();
   const { colors, highContrast } = useAuraTheme();
   const { settings, textScale } = useSettings();
   const { song, isPlaying, atmosphere, atmosphereLoading, lyrics, error, clearError } = usePlayer();
@@ -92,7 +94,7 @@ export default function NowPlayingScreenFeature() {
           style={{ flexGrow: 1, justifyContent: 'space-between', paddingTop: 16, paddingBottom: 24 }}>
           <View style={styles.header}>
             <Pressable
-              onPress={() => router.back()}
+              onPress={() => goBack()}
               accessibilityRole="button"
               accessibilityLabel="Close player"
               hitSlop={12}>

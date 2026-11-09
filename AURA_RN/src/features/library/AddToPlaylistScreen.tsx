@@ -5,6 +5,7 @@ import { BackButton, AuraText, EmptyState, ErrorMessage, Heading, LoadingState, 
 import { auraApi } from '@/core/api';
 import { usePlayer } from '@/core/player';
 import { useAuraTheme } from '@/core/theme';
+import { useGoBack } from '@/core/use-go-back';
 import type { Playlist } from '@/core/types';
 import { useAuraQuery } from '@/core/use-aura-query';
 
@@ -16,6 +17,7 @@ import { useAddSongToPlaylist, useEditablePlaylists } from './hooks/use-playlist
  */
 export default function AddToPlaylistScreenFeature() {
   const router = useRouter();
+  const goBack = useGoBack();
   const toast = useToast();
   const { colors } = useAuraTheme();
   const { songId } = useLocalSearchParams<{ songId?: string }>();
@@ -57,7 +59,7 @@ export default function AddToPlaylistScreenFeature() {
               onPress: () => router.push({ pathname: '/playlist/[id]', params: { id: playlist.id } }),
             },
           });
-          router.back();
+          goBack();
         },
       },
     );

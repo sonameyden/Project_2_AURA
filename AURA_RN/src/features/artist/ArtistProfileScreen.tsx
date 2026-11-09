@@ -21,6 +21,7 @@ import {
 } from '@/components/ui';
 import { usePlayer } from '@/core/player';
 import { useAuraTheme } from '@/core/theme';
+import { useGoBack } from '@/core/use-go-back';
 import { useOpenAddToPlaylist } from '@/hooks/use-open-add-to-playlist';
 
 import { useArtistProfile } from './hooks/use-artist-profile';
@@ -28,6 +29,7 @@ import { useArtistProfile } from './hooks/use-artist-profile';
 export default function ArtistProfileScreenFeature() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const goBack = useGoBack();
   const { colors } = useAuraTheme();
   const { playSong, togglePlayback, isPlaying, song: currentSong } = usePlayer();
   const openAddToPlaylist = useOpenAddToPlaylist();
@@ -129,7 +131,7 @@ export default function ArtistProfileScreenFeature() {
                   </Pressable>
                 ) : null}
                 <Pressable
-                  onPress={() => router.back()}
+                  onPress={() => goBack()}
                   accessibilityRole="button"
                   accessibilityLabel="Go back"
                   style={{
@@ -364,7 +366,11 @@ export default function ArtistProfileScreenFeature() {
         footer={
           <>
             {isOwnProfile ? (
-              <View style={{ paddingHorizontal: 24, paddingTop: 8 }}>
+              <View style={{ paddingHorizontal: 24, paddingTop: 16, gap: 10 }}>
+                <SectionTitle title="Account" />
+                <AuraText style={{ color: colors.muted, fontSize: 13 }}>
+                  Removes your artist page, songs and albums. Your listener account stays.
+                </AuraText>
                 <ActionButton
                   title="Delete artist account"
                   variant="danger"

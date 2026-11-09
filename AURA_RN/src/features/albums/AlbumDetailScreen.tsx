@@ -21,6 +21,7 @@ import { useAuth } from '@/core/auth-context';
 import { IMAGE_MAX_SIZE, pickImageForm } from '@/core/pick-image';
 import { usePlayer } from '@/core/player';
 import { useAuraTheme } from '@/core/theme';
+import { useGoBack } from '@/core/use-go-back';
 import { useRefreshCatalog } from '@/hooks/use-refresh-catalog';
 import type { Song } from '@/core/types';
 import { useAuraQuery } from '@/core/use-aura-query';
@@ -29,6 +30,7 @@ import { useOpenAddToPlaylist } from '@/hooks/use-open-add-to-playlist';
 export default function AlbumDetailScreenFeature() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const goBack = useGoBack();
   const refreshCatalog = useRefreshCatalog();
   const { colors } = useAuraTheme();
   const { getToken, user } = useAuth();
@@ -88,7 +90,7 @@ export default function AlbumDetailScreenFeature() {
           void getToken()
             .then((token) => auraApi.deleteAlbum(token, id))
             .then(() => refreshCatalog())
-            .then(() => router.back())
+            .then(() => goBack())
             .catch((deleteError: unknown) =>
               showAlert(
                 'Could not delete album',

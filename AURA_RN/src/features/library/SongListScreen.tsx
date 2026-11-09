@@ -10,6 +10,7 @@ import {
   LoadingState,
   Page,
   TrackRow,
+  useBottomOverlap,
   showAlert,
 } from '@/components/ui';
 import { auraApi } from '@/core/api';
@@ -24,6 +25,7 @@ export function SongListScreen({ kind }: { kind: 'liked' | 'history' }) {
   const router = useRouter();
   const { colors } = useAuraTheme();
   const { playSong, song: playing } = usePlayer();
+  const bottomOverlap = useBottomOverlap();
   const likedQuery = useLikedSongs(kind === 'liked');
   const historyQuery = useAuraQuery(['library', 'history'], (token) => auraApi.history(token), kind === 'history');
   const songsQuery = kind === 'liked' ? likedQuery : historyQuery;
@@ -40,7 +42,7 @@ export function SongListScreen({ kind }: { kind: 'liked' | 'history' }) {
         // History can contain the same song more than once.
         keyExtractor={(item, index) => `${item.id}-${index}`}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ gap: 4, paddingBottom: 132 }}
+        contentContainerStyle={{ gap: 4, paddingBottom: 28 + bottomOverlap }}
         ListHeaderComponent={
           <View style={{ gap: 20, marginBottom: 12 }}>
             <Heading

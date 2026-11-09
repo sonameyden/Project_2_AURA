@@ -19,6 +19,7 @@ import {
 import { useAuth } from '@/core/auth-context';
 import { usePlayer } from '@/core/player';
 import { useAuraTheme } from '@/core/theme';
+import { useGoBack } from '@/core/use-go-back';
 import type { PlaylistDetail } from '@/core/types';
 import { useOpenAddToPlaylist } from '@/hooks/use-open-add-to-playlist';
 
@@ -37,6 +38,7 @@ const errorText = (error: unknown) => (error instanceof Error ? error.message : 
 export default function PlaylistDetailScreenFeature() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const goBack = useGoBack('/playlists');
   const { colors } = useAuraTheme();
   const { user } = useAuth();
   const { playSong, song: playing } = usePlayer();
@@ -88,7 +90,7 @@ export default function PlaylistDetailScreenFeature() {
           leave.mutate(
             { playlistId: playlist.id, userId: user.uid },
             {
-              onSuccess: () => router.back(),
+              onSuccess: () => goBack(),
               onError: (leaveError) => showAlert('Could not leave', errorText(leaveError)),
             },
           ),
